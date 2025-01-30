@@ -175,35 +175,58 @@ th, td {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); 
+    z-index: 1000;
+    max-width: 400px; 
+    width: 90%; 
+    max-height: 90%; 
+    overflow-y: auto; 
+    box-sizing: border-box; 
 }
 
 #contenedor-formulario h2 {
     margin-top: 0;
-   
+    margin-bottom: 20px;
+    color: #333;
+    text-align: center;
 }
 
 #contenedor-formulario input {
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     width: 100%;
-    padding: 8px;
-    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0.9); /* Fondo ligeramente transparente */
+    font-size: 1rem;
 }
 
 #contenedor-formulario button {
+    width: 100%;
     padding: 10px;
-    background-color: #28a745;
-    color: white;
+    margin-top: 10px;
     border: none;
-    border-radius: 5px;
+    border-radius: 15px;
     cursor: pointer;
+    background-color: #228B22;
+    color: white;
+    font-size: 1rem;
+}
+
+#contenedor-formulario button:hover {
+    background-color: #1e7b1e;
 }
 
 #contenedor-formulario .cancelar {
     background-color: #ccc;
-    margin-left: 10px;
+    color: black;
+    margin-top: 10px;
+}
+
+#contenedor-formulario .cancelar:hover {
+    background-color: #aaa;
 }
 
 #map {

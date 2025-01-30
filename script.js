@@ -1,13 +1,13 @@
 let semillasData = [
-    { nombre: "Trigo", tipo: "Semilla", cantidad: "200 kg", fechaExpiracion: "2025-05-31", lugarAlmacenamiento: "Almacén 1" },
-    { nombre: "Maíz", tipo: "Semilla", cantidad: "150 kg", fechaExpiracion: "2024-07-15", lugarAlmacenamiento: "Almacén 2" },
-    { nombre: "Soja", tipo: "Semilla", cantidad: "100 kg", fechaExpiracion: "2024-12-01", lugarAlmacenamiento: "Almacén 3" }
+    { nombre: "Trigo", variedad: "Klein Chaja", cantidad: "200 kg", fechaAdquisicion: "2024-05-31",  fechaExpiracion: "2025-05-31", proveedor: "Proveedor 1" },
+    { nombre: "Maíz", variedad: "Dekalb 70", cantidad: "150 kg", fechaAdquisicion: "2023-06-09", fechaExpiracion: "2024-07-15", proveedor: "Proveedor 2" },
+    { nombre: "Soja", variedad: "Inca", cantidad: "100 kg", fechaAdquisicion: "2023-08-21", fechaExpiracion: "2024-12-01", proveedor: "Proveedor 3" }
 ];
 
 let granosData = [
-    { nombre: "Arroz", tipo: "Grano", cantidad: "300 kg", fechaExpiracion: "2025-01-20", lugarAlmacenamiento: "Almacén 1" },
-    { nombre: "Frijol", tipo: "Grano", cantidad: "250 kg", fechaExpiracion: "2024-10-10", lugarAlmacenamiento: "Almacén 2" },
-    { nombre: "Lenteja", tipo: "Grano", cantidad: "180 kg", fechaExpiracion: "2024-11-30", lugarAlmacenamiento: "Almacén 3" }
+    { nombre: "Arroz", variedad: "Chino", cantidad: "300 kg", fechaCosecha: "2025-01-20", lugarAlmacenamiento: "Almacén 1", calidad: "Alta" },
+    { nombre: "Girasol", variedad: "P66", cantidad: "250 kg", fechaCosecha: "2024-10-10", lugarAlmacenamiento: "Almacén 2", calidad: "Media" },
+    { nombre: "Lenteja", variedad: "Pardina", cantidad: "180 kg", fechaCosecha: "2024-11-30", lugarAlmacenamiento: "Almacén 3", calidad: "Alta" }
 ];
 
 let parcelas = []; 
@@ -128,25 +128,27 @@ function mostrarInventarios(tipo) {
                     <tr>
                         <th>Semilla</th>
                         <th>Variedad</th>
-                        <th>Cantidad Almacenada</th>
+                        <th>Cantidad Disponible</th>
+                        <th>Fecha Adquisición</th>
                         <th>Fecha Expiración</th>
-                        <th>Lugar de Almacenamiento</th>
+                        <th>Proveedor</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${semillasData.map(semilla => `
                         <tr>
                             <td>${semilla.nombre}</td>
-                            <td>${semilla.tipo}</td>
+                            <td>${semilla.variedad}</td>
                             <td>${semilla.cantidad}</td>
+                            <td>${semilla.fechaAdquisicion}</td>
                             <td>${semilla.fechaExpiracion}</td>
-                            <td>${semilla.lugarAlmacenamiento}</td>
+                            <td>${semilla.proveedor}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>`;
-        botonAgregarSemillas.style.display = 'block'; 
-        botonAgregarGranos.style.display = 'none'; 
+        botonAgregarSemillas.style.display = 'block';
+        botonAgregarGranos.style.display = 'none';
         document.getElementById('boton-semillas').classList.add('activo');
         document.getElementById('boton-granos').classList.remove('activo');
     } else {
@@ -155,79 +157,117 @@ function mostrarInventarios(tipo) {
                 <thead>
                     <tr>
                         <th>Grano</th>
-                        <th>Tipo</th>
+                        <th>Variedad</th>
                         <th>Cantidad Almacenada</th>
-                        <th>Fecha Expiración</th>
+                        <th>Fecha Cosecha</th>
                         <th>Lugar de Almacenamiento</th>
+                        <th>Calidad</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${granosData.map(grano => `
                         <tr>
                             <td>${grano.nombre}</td>
-                            <td>${grano.tipo}</td>
+                            <td>${grano.variedad}</td>
                             <td>${grano.cantidad}</td>
-                            <td>${grano.fechaExpiracion}</td>
+                            <td>${grano.fechaCosecha}</td>
                             <td>${grano.lugarAlmacenamiento}</td>
+                            <td>${grano.calidad}</td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>`;
-        botonAgregarSemillas.style.display = 'none'; 
-        botonAgregarGranos.style.display = 'block'; 
+        botonAgregarSemillas.style.display = 'none';
+        botonAgregarGranos.style.display = 'block';
         document.getElementById('boton-granos').classList.add('activo');
         document.getElementById('boton-semillas').classList.remove('activo');
     }
 
-    botonAgregarSemillas.onclick = function() {
+    botonAgregarSemillas.onclick = function () {
         mostrarFormulario('semillas');
     };
 
-    botonAgregarGranos.onclick = function() {
+    botonAgregarGranos.onclick = function () {
         mostrarFormulario('granos');
     };
 
-    document.getElementById('boton-semillas').onclick = function() {
+    document.getElementById('boton-semillas').onclick = function () {
         mostrarInventarios('semillas');
     };
-    document.getElementById('boton-granos').onclick = function() {
+    document.getElementById('boton-granos').onclick = function () {
         mostrarInventarios('granos');
     };
 }
 
 function mostrarFormulario(tipo) {
     const formContainer = document.getElementById('contenedor-formulario');
-    const title = tipo === 'semillas' ? 'Registro de Semillas' : 'Registro de Granos';
-    const tipoInput = tipo === 'semillas' ? 'Semilla' : 'Grano';
+    let formContent = '';
+    
+    if (tipo === 'semillas') {
+        formContent = `
+            <h2>Registro de Semillas</h2>
+            <p>Semilla</p>
+            <input type="text" id="nombre" required>
+            <p>Variedad</p>
+            <input type="text" id="variedad" required>
+            <p>Cantidad</p>
+            <input type="double" id="cantidad" required>
+            <p>Fecha de Adquisición</p>
+            <input type="date" id="fechaAdquisicion" required>
+            <p>Fecha de Expiración</p>
+            <input type="date" id="fechaExpiracion" required>
+            <p>Proveedor</p>
+            <input type="text" id="proveedor" required>
+            <button id="registrar-inventario-boton">Registrar</button>
+            <button class="cancelar" id="cancelar-boton">Cancelar</button>
+        `;
+    } else if (tipo === 'granos') {
+        formContent = `
+            <h2>Registro de Granos</h2>
+            <p>Grano</p>
+            <input type="text" id="nombre" required>
+            <p>Variedad</p>
+            <input type="text" id="variedad" required>
+            <p>Cantidad</p>
+            <input type="double" id="cantidad" required>
+            <p>Fecha de Cosecha</p>
+            <input type="date" id="fechaCosecha" required>
+            <p>Lugar de Almacenamiento</p>
+            <input type="text" id="lugarAlmacenamiento" required>
+            <p>Calidad</p>
+            <input type="text" id="calidad" required>
+            <button id="registrar-inventario-boton">Registrar</button>
+            <button class="cancelar" id="cancelar-boton">Cancelar</button>
+        `;
+    }
 
-    formContainer.innerHTML = `
-        <h2>${title}</h2>
-        <input type="text" id="nombre" placeholder="${tipoInput} Nombre" required>
-        <input type="text" id="cantidad" placeholder="Cantidad Almacenada" required>
-        <input type="date" id="fechaExpiracion" placeholder="Fecha de Expiración" required>
-        <input type="text" id="lugarAlmacenamiento" placeholder="Lugar de Almacenamiento" required>
-        <button id="registrar-inventario-boton">Registrar</button>
-        <button class="cancelar" id="cancelar-boton">cancelarar</button>
-    `;
+    formContainer.innerHTML = formContent;
     formContainer.style.display = 'block';
 
-    document.getElementById('registrar-inventario-boton').onclick = function() {
+    document.getElementById('registrar-inventario-boton').onclick = function () {
         const nombre = document.getElementById('nombre').value;
+        const variedad = document.getElementById('variedad').value;
         const cantidad = document.getElementById('cantidad').value;
-        const fechaExpiracion = document.getElementById('fechaExpiracion').value;
-        const lugarAlmacenamiento = document.getElementById('lugarAlmacenamiento').value;
 
         if (tipo === 'semillas') {
-            semillasData.push({ nombre, tipo: 'Semilla', cantidad, fechaExpiracion, lugarAlmacenamiento });
-        } else {
-            granosData.push({ nombre, tipo: 'Grano', cantidad, fechaExpiracion, lugarAlmacenamiento });
+            const fechaAdquisicion = document.getElementById('fechaAdquisicion').value;
+            const fechaExpiracion = document.getElementById('fechaExpiracion').value;
+            const proveedor = document.getElementById('proveedor').value;
+
+            semillasData.push({ nombre, variedad, cantidad, fechaAdquisicion, fechaExpiracion, proveedor });
+        } else if (tipo === 'granos') {
+            const fechaCosecha = document.getElementById('fechaCosecha').value;
+            const lugarAlmacenamiento = document.getElementById('lugarAlmacenamiento').value;
+            const calidad = document.getElementById('calidad').value;
+
+            granosData.push({ nombre, variedad, cantidad, fechaCosecha, lugarAlmacenamiento, calidad });
         }
 
-        formContainer.style.display = 'none'; 
-        mostrarInventarios(tipo); 
+        formContainer.style.display = 'none';
+        mostrarInventarios(tipo);
     };
 
-    document.getElementById('cancelar-boton').onclick = function() {
+    document.getElementById('cancelar-boton').onclick = function () {
         formContainer.style.display = 'none';
     };
 }
