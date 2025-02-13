@@ -12,13 +12,6 @@ let granosData = [
 
 let parcelas = []; 
 
-document.getElementById('formulario-login').addEventListener('submit', function(e) {
-    e.preventDefault(); 
-    document.getElementById('contenedor-login').style.display = 'none';
-    document.getElementById('contenedor-aplicacion').style.display = 'block';
-    mostrarContenido('reportes'); 
-});
-
 document.getElementById('boton-registrar').addEventListener('click', function() {
     const loginForm = document.getElementById('formulario-login');
     const formContainer = document.getElementById('contenedor-formulario');
@@ -27,8 +20,8 @@ document.getElementById('boton-registrar').addEventListener('click', function() 
 
     formContainer.innerHTML = `
         <h2>Registro de Usuario</h2>
-        <input type="email" id="registrar-email" placeholder="Correo Electrónico" required>
-        <input type="password" id="registrar-contrasenia" placeholder="Contraseña" required>
+        <input type="email" id="email" placeholder="Correo Electrónico" required>
+        <input type="password" id="contrasena" placeholder="Contraseña" required>
         <button id="registrar-usuario-boton">Registrar</button>
         <button class="cancelar" id="cancelar-boton-registrar">Cancelar</button>
     `;
@@ -39,14 +32,46 @@ document.getElementById('boton-registrar').addEventListener('click', function() 
         loginForm.style.display = 'block'; 
     };
 
-    document.getElementById('registrar-usuario-boton').onclick = function() {
-        const email = document.getElementById('registrar-email').value;
-        const password = document.getElementById('registrar-contrasenia').value;
-        console.log(`Registro de usuario: ${email}, ${password}`);
-        returnToLogin();
+    document.getElementById('registrar-usuario-boton').onclick = async function() {
+        const email = document.getElementById('email').value;
+        const contrasena = document.getElementById('contrasena').value;
+        try {
+            const response = await fetch('http://localhost:8080/usuarios/registrar-usuario', {
+                headers: { "Content-Type": "application/json" },
+                method: "POST",
+                body: JSON.stringify({ email, contrasena })
+            });
+            if (!response.ok) throw new Error('Error en el registro');
+            alert('Registro exitoso');
+            returnToLogin();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Hubo un problema al registrar');
+        }
     };
 
     document.getElementById('cancelar-boton-registrar').onclick = returnToLogin;
+});
+
+document.getElementById('boton-iniciar-sesion').addEventListener('click', async function(event) {
+    event.preventDefault();
+    const email = document.querySelector('#formulario-login input[type="email"]').value;
+    const contrasena = document.querySelector('#formulario-login input[type="password"]').value;
+    
+    try {
+        const response = await fetch('http://localhost:8080/usuarios/iniciar-sesion', {
+            headers: { "Content-Type": "application/json" },
+            method: "POST",
+            body: JSON.stringify({ email, contrasena })
+        });
+        if (!response.ok) throw new Error('Error en el inicio de sesión');
+        document.getElementById('contenedor-login').style.display = 'none';
+        document.getElementById('contenedor-aplicacion').style.display = 'block';
+        mostrarContenido('reportes');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Hubo un problema al iniciar sesión');
+    }
 });
 
 document.querySelectorAll('.icono').forEach(item => {
@@ -115,7 +140,6 @@ function mostrarContenido(section) {
         mostrarInventarios('semillas'); 
     }
 }
-
 
 async function mostrarInventarios(tipo) {
     const inventarioscontenido = document.getElementById('inventarios-contenido');
