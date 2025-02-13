@@ -116,7 +116,8 @@ function mostrarContenido(section) {
     }
 }
 
-function mostrarInventarios(tipo) {
+
+async function mostrarInventarios(tipo) {
     const inventarioscontenido = document.getElementById('inventarios-contenido');
     const botonAgregarSemillas = document.getElementById('agregar-semillas');
     const botonAgregarGranos = document.getElementById('agregar-granos');
@@ -135,7 +136,10 @@ function mostrarInventarios(tipo) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${semillasData.map(semilla => `
+                    ${await fetch(`http://localhost:8080/inventarios/semillas`)
+                        .then(r => r.json())
+                        .then(r => r.results)
+                        .then(semillas => semillas.map(semilla => `
                         <tr>
                             <td>${semilla.nombre}</td>
                             <td>${semilla.variedad}</td>
@@ -144,7 +148,7 @@ function mostrarInventarios(tipo) {
                             <td>${semilla.fechaExpiracion}</td>
                             <td>${semilla.proveedor}</td>
                         </tr>
-                    `).join('')}
+                    `).join(''))}
                 </tbody>
             </table>`;
         botonAgregarSemillas.style.display = 'block';
@@ -165,16 +169,19 @@ function mostrarInventarios(tipo) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${granosData.map(grano => `
+                    ${await fetch(`http://localhost:8080/inventarios/granos`)
+                        .then(r => r.json())
+                        .then(r => r.results)
+                        .then(granos => granos.map(grano => `
                         <tr>
                             <td>${grano.nombre}</td>
                             <td>${grano.variedad}</td>
                             <td>${grano.cantidad}</td>
                             <td>${grano.fechaCosecha}</td>
-                            <td>${grano.lugarAlmacenamiento}</td>
+                            <td>${grano.ubicacionAlmacenamiento}</td>
                             <td>${grano.calidad}</td>
                         </tr>
-                    `).join('')}
+                    `).join(''))}
                 </tbody>
             </table>`;
         botonAgregarSemillas.style.display = 'none';
@@ -184,11 +191,11 @@ function mostrarInventarios(tipo) {
     }
 
     botonAgregarSemillas.onclick = function () {
-        mostrarFormulario('semillas');
+        registrarInventario('semillas');
     };
 
     botonAgregarGranos.onclick = function () {
-        mostrarFormulario('granos');
+        registrarInventario('granos');
     };
 
     document.getElementById('boton-semillas').onclick = function () {
@@ -199,11 +206,13 @@ function mostrarInventarios(tipo) {
     };
 }
 
-function mostrarFormulario(tipo) {
+function registrarInventario(tipo) {
     const formContainer = document.getElementById('contenedor-formulario');
     let formContent = '';
-    
+    let endpoint = '';
+
     if (tipo === 'semillas') {
+        endpoint = 'http://localhost:8080/inventarios/semillas';
         formContent = `
             <h2>Registro de Semillas</h2>
             <p>Semilla</p>
@@ -211,7 +220,7 @@ function mostrarFormulario(tipo) {
             <p>Variedad</p>
             <input type="text" id="variedad" required>
             <p>Cantidad</p>
-            <input type="double" id="cantidad" required>
+            <input type="number" id="cantidad" required>
             <p>Fecha de Adquisición</p>
             <input type="date" id="fechaAdquisicion" required>
             <p>Fecha de Expiración</p>
@@ -222,6 +231,7 @@ function mostrarFormulario(tipo) {
             <button class="cancelar" id="cancelar-boton">Cancelar</button>
         `;
     } else if (tipo === 'granos') {
+        endpoint = 'http://localhost:8080/inventarios/granos';
         formContent = `
             <h2>Registro de Granos</h2>
             <p>Grano</p>
@@ -229,7 +239,7 @@ function mostrarFormulario(tipo) {
             <p>Variedad</p>
             <input type="text" id="variedad" required>
             <p>Cantidad</p>
-            <input type="double" id="cantidad" required>
+            <input type="number" id="cantidad" required>
             <p>Fecha de Cosecha</p>
             <input type="date" id="fechaCosecha" required>
             <p>Lugar de Almacenamiento</p>
@@ -244,33 +254,47 @@ function mostrarFormulario(tipo) {
     formContainer.innerHTML = formContent;
     formContainer.style.display = 'block';
 
-    document.getElementById('registrar-inventario-boton').onclick = function () {
+    document.getElementById('registrar-inventario-boton').onclick = async function () {
         const nombre = document.getElementById('nombre').value;
         const variedad = document.getElementById('variedad').value;
-        const cantidad = document.getElementById('cantidad').value;
+        const cantidad = parseFloat(document.getElementById('cantidad').value);
+        let data = { nombre, variedad, cantidad };
 
         if (tipo === 'semillas') {
-            const fechaAdquisicion = document.getElementById('fechaAdquisicion').value;
-            const fechaExpiracion = document.getElementById('fechaExpiracion').value;
-            const proveedor = document.getElementById('proveedor').value;
-
-            semillasData.push({ nombre, variedad, cantidad, fechaAdquisicion, fechaExpiracion, proveedor });
+            data.fechaAdquisicion = document.getElementById('fechaAdquisicion').value;
+            data.fechaExpiracion = document.getElementById('fechaExpiracion').value;
+            data.proveedor = document.getElementById('proveedor').value;
         } else if (tipo === 'granos') {
-            const fechaCosecha = document.getElementById('fechaCosecha').value;
-            const lugarAlmacenamiento = document.getElementById('lugarAlmacenamiento').value;
-            const calidad = document.getElementById('calidad').value;
-
-            granosData.push({ nombre, variedad, cantidad, fechaCosecha, lugarAlmacenamiento, calidad });
+            data.fechaCosecha = document.getElementById('fechaCosecha').value;
+            data.lugarAlmacenamiento = document.getElementById('lugarAlmacenamiento').value;
+            data.calidad = document.getElementById('calidad').value;
         }
 
-        formContainer.style.display = 'none';
-        mostrarInventarios(tipo);
+        try {
+            const response = await fetch(endpoint, {
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                method: "POST",
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error('Error en el registro');
+            }
+            alert('Registro exitoso');
+            formContainer.style.display = 'none';
+            mostrarInventarios(tipo);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Hubo un problema al registrar');
+        }
     };
 
     document.getElementById('cancelar-boton').onclick = function () {
         formContainer.style.display = 'none';
     };
 }
+
 
 function inicializarMapa() {
     const map = L.map('map').setView([-32.8624, -63.7037], 13); 
