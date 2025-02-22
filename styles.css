@@ -103,6 +103,12 @@ body {
     justify-content: space-between;
 }
 
+.grafico-comparativo {
+    max-width: 90%;
+    margin: 20px 0;
+    height: 250px;
+}
+
 canvas {
     max-width: 45%;
     margin: 20px 0;
@@ -199,7 +205,7 @@ th, td {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 15px;
-    background-color: rgba(255, 255, 255, 0.9); /* Fondo ligeramente transparente */
+    background-color: rgba(255, 255, 255, 0.9); 
     font-size: 1rem;
 }
 

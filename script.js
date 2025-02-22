@@ -111,14 +111,16 @@ function mostrarContenido(section) {
 
     if (section === 'reportes') {
         contenidoArea.innerHTML = `
-            <h1>Reportes</h1>
-            <div class="contenedor-canvas">
-                <canvas id="graficoTrigo"></canvas>
-                <canvas id="graficoMaiz"></canvas>
-                <canvas id="graficoSoja"></canvas>
-                <canvas id="graficoCosechas"></canvas>
-            </div>`;
-        crearGraficos();
+            <div class="header-inventarios">
+                <h1>Reportes</h1>
+                <div>
+                    <button id="boton-semillas" class="boton-toggle activo">Semillas</button>
+                    <button id="boton-granos" class="boton-toggle">Granos</button>
+                </div>
+            </div>
+            <canvas id="grafico-comparativo"></canvas>
+            <div id="contenedor-graficos" class="contenedor-canvas"></div>`;
+        crearGraficos('semillas');
         contenedorAgregarBotones.style.display = 'none'; 
     } else if (section === 'campos') {
         contenidoArea.innerHTML = `
@@ -375,105 +377,162 @@ function inicializarMapa() {
     });
 }
 
-function crearGraficos() {
-    const ctxTrigo = document.getElementById('graficoTrigo').getContext('2d');
-    const graficoTrigo = new Chart(ctxTrigo, {
-        type: 'bar',
-        data: {
-            labels: ['2019', '2020', '2021', '2022', '2023'],
-            datasets: [{
-                label: 'Cantidad de Trigo Cosechado (kg)',
-                data: [150, 200, 250, 300, 350],
-                backgroundColor: 'rgba(255, 206, 86, 0.2)',
-                borderColor: 'rgba(255, 206, 86, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+function procesarDatosSemillas(semillas) {
+    const anios = [...new Set(semillas.map(s => new Date(s.fechaAdquisicion).getFullYear()))].sort();
+    const tiposSemillas = [...new Set(semillas.map(s => s.nombre))];
+    
+    const datosPorAnio = {};
+    anios.forEach(anio => {
+        datosPorAnio[anio] = {};
+        tiposSemillas.forEach(tipo => {
+            datosPorAnio[anio][tipo] = 0;
+        });
+    });
+
+    semillas.forEach(({ nombre, cantidad, fechaAdquisicion }) => {
+        const anio = new Date(fechaAdquisicion).getFullYear();
+        if (datosPorAnio[anio] && datosPorAnio[anio][nombre] !== undefined) {
+            datosPorAnio[anio][nombre] += cantidad;
         }
     });
 
-    const ctxMaiz = document.getElementById('graficoMaiz').getContext('2d');
-    const graficoMaiz = new Chart(ctxMaiz, {
-        type: 'bar',
-        data: {
-            labels: ['2019', '2020', '2021', '2022', '2023'],
-            datasets: [{
-                label: 'Cantidad de Maíz Cosechado (kg)',
-                data: [100, 150, 200, 250, 300],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
+    return { anios, tiposSemillas, datosPorAnio };
+}
+
+function procesarDatosGranos(granos) {
+    const anios = [...new Set(granos.map(g => new Date(g.fechaCosecha).getFullYear()))].sort();
+    const tiposGranos = [...new Set(granos.map(g => g.nombre))];
+    
+    const datosPorAnio = {};
+    anios.forEach(anio => {
+        datosPorAnio[anio] = {};
+        tiposGranos.forEach(tipo => {
+            datosPorAnio[anio][tipo] = 0;
+        });
+    });
+
+    granos.forEach(({ nombre, cantidad, fechaCosecha }) => {
+        const anio = new Date(fechaCosecha).getFullYear();
+        if (datosPorAnio[anio] && datosPorAnio[anio][nombre] !== undefined) {
+            datosPorAnio[anio][nombre] += cantidad;
         }
     });
 
-    const ctxSoja = document.getElementById('graficoSoja').getContext('2d');
-    const graficoSoja = new Chart(ctxSoja, {
-        type: 'bar',
-        data: {
-            labels: ['2019', '2020', '2021', '2022', '2023'],
-            datasets: [{
-                label: 'Cantidad de Soja Cosechada (toneladas)',
-                data: [80, 120, 160, 200, 240],
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
+    return { anios, tiposGranos, datosPorAnio };
+}
 
-    const ctxCosechas = document.getElementById('graficoCosechas').getContext('2d');
-    const graficoCosechas = new Chart(ctxCosechas, {
-        type: 'line',
-        data: {
-            labels: ['2019', '2020', '2021', '2022', '2023'],
-            datasets: [
-                {
-                    label: 'Trigo',
-                    data: [150, 200, 250, 300, 350],
-                    borderColor: 'rgba(255, 206, 86, 1)',
+async function crearGraficos(tipo) {
+
+    const graficos = document.getElementById(`contenedor-graficos`);
+
+    if (Chart.getChart("grafico-comparativo")) Chart.getChart("grafico-comparativo").destroy()
+
+    if (tipo === 'semillas') {
+        const semillas = await fetch('http://localhost:8080/inventarios/semillas')
+                                .then(r => r.json())
+                                .then(r => r.results);
+
+        const { anios, tiposSemillas, datosPorAnio } = procesarDatosSemillas(semillas);
+
+        const ctxComparativo = document.getElementById('grafico-comparativo').getContext('2d');
+        new Chart(ctxComparativo, {
+            type: 'line',
+            data: {
+                labels: anios,
+                datasets: tiposSemillas.map(tipo => ({
+                    label: tipo,
+                    data: anios.map(anio => datosPorAnio[anio][tipo] || 0),
+                    borderColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
                     fill: false
+                }))
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+        
+        tiposSemillas.forEach(tipo => {
+            const ctx = document.createElement('canvas');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: anios,
+                    datasets: [{
+                        label: `Cantidad de ${tipo} Adquirida (kg)`,
+                        data: anios.map(anio => datosPorAnio[anio][tipo] || 0),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
                 },
-                {
-                    label: 'Maíz',
-                    data: [100, 150, 200, 250, 300],
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    fill: false
-                },
-                {
-                    label: 'Soja',
-                    data: [80, 120, 160, 200, 240],
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false
+                options: {
+                    scales: { y: { beginAtZero: true } }
                 }
-            ]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+            });
+            graficos.appendChild(ctx);
+        });
+
+        document.getElementById('boton-semillas').classList.add('activo');
+        document.getElementById('boton-granos').classList.remove('activo');
+
+
+    } else if (tipo === 'granos') {
+
+        const granos = await fetch('http://localhost:8080/inventarios/granos')
+                            .then(r => r.json())
+                            .then(r => r.results);
+    
+        const { anios, tiposGranos, datosPorAnio } = procesarDatosGranos(granos);
+
+        const ctxComparativo = document.getElementById('grafico-comparativo').getContext('2d');
+        new Chart(ctxComparativo, {
+            type: 'line',
+            data: {
+                labels: anios,
+                datasets: tiposGranos.map(tipo => ({
+                    label: tipo,
+                    data: anios.map(anio => datosPorAnio[anio][tipo] || 0),
+                    borderColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    fill: false
+                }))
+            },
+            options: {
+                scales: { y: { beginAtZero: true } }
             }
-        }
-    });
+        });
+        
+        tiposGranos.forEach(tipo => {
+            const ctx = document.createElement('canvas');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: anios,
+                    datasets: [{
+                        label: `Cantidad de ${tipo} Cosechado (kg)`,
+                        data: anios.map(anio => datosPorAnio[anio][tipo] || 0),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+            graficos.appendChild(ctx);
+        });
+
+        document.getElementById('boton-semillas').classList.remove('activo');
+        document.getElementById('boton-granos').classList.add('activo');
+
+    }
+
+    document.getElementById('boton-semillas').onclick = function () {
+        crearGraficos('semillas');
+    };
+
+    document.getElementById('boton-granos').onclick = function () {
+        crearGraficos('granos');
+    };
+    
 }
