@@ -1,17 +1,3 @@
-let semillasData = [
-    { nombre: "Trigo", variedad: "Klein Chaja", cantidad: "200 kg", fechaAdquisicion: "2024-05-31",  fechaExpiracion: "2025-05-31", proveedor: "Proveedor 1" },
-    { nombre: "Maíz", variedad: "Dekalb 70", cantidad: "150 kg", fechaAdquisicion: "2023-06-09", fechaExpiracion: "2024-07-15", proveedor: "Proveedor 2" },
-    { nombre: "Soja", variedad: "Inca", cantidad: "100 kg", fechaAdquisicion: "2023-08-21", fechaExpiracion: "2024-12-01", proveedor: "Proveedor 3" }
-];
-
-let granosData = [
-    { nombre: "Arroz", variedad: "Chino", cantidad: "300 kg", fechaCosecha: "2025-01-20", lugarAlmacenamiento: "Almacén 1", calidad: "Alta" },
-    { nombre: "Girasol", variedad: "P66", cantidad: "250 kg", fechaCosecha: "2024-10-10", lugarAlmacenamiento: "Almacén 2", calidad: "Media" },
-    { nombre: "Lenteja", variedad: "Pardina", cantidad: "180 kg", fechaCosecha: "2024-11-30", lugarAlmacenamiento: "Almacén 3", calidad: "Alta" }
-];
-
-let parcelas = []; 
-
 document.getElementById('boton-registrar').addEventListener('click', function() {
     const loginForm = document.getElementById('formulario-login');
     const formContainer = document.getElementById('contenedor-formulario');
@@ -86,8 +72,8 @@ document.querySelectorAll('.icono').forEach(item => {
             contenido.style.display = 'none';
         });
 
-        const contenidoId = item.id + '-contenido';
-        document.getElementById(contenidoId).style.display = 'block';
+        //const contenidoId = item.id + '-contenido';
+        //document.getElementById(contenidoId).style.display = 'block';
 
         document.getElementById('contenido-title').textcontenido = item.textcontenido;
     });
@@ -321,6 +307,18 @@ function registrarInventario(tipo) {
     };
 }
 
+function definirColorCampo(estado) {
+    switch (estado) {
+        case 'cultivo':
+            return 'green';
+        case 'sin cultivar':
+            return 'yellow';
+        case 'en descanso':
+            return 'orange';
+        default:
+            return 'red'; 
+    }
+}
 
 function inicializarMapa() {
     const map = L.map('map').setView([-32.8624, -63.7037], 13); 
@@ -332,34 +330,28 @@ function inicializarMapa() {
 
     const elementosDibujados = new L.FeatureGroup();
     map.addLayer(elementosDibujados);
+
     const controlDibujo = new L.Control.Draw({
         edit: {
             featureGroup: elementosDibujados
         }
     });
     map.addControl(controlDibujo);
+    
+    fetch('http://localhost:8080/campos')
+        .then(r => r.json())
+        .then(r => r.results)
+        .then(r => r.forEach(campo => {
+            let color = definirColorCampo(campo.estado);
+            L.polygon(campo.coordenadas, {color: color}).addTo(map);
+        }));    
 
     map.on(L.Draw.Event.CREATED, function(event) {
         const capa = event.layer;
-        const type = event.layerType;
 
         const estado = prompt("¿Cuál es el estado de la parcela? (ej. cultivo, sin cultivar, etc.)");
 
-        let color;
-        switch (estado) {
-            case 'cultivo':
-                color = 'green';
-                break;
-            case 'sin cultivar':
-                color = 'yellow';
-                break;
-            case 'en descanso':
-                color = 'orange';
-                break;
-            default:
-                color = 'red'; 
-        }
-
+        let color = definirColorCampo(estado);
         capa.setStyle({
             color: color,
             fillColor: color,
@@ -367,13 +359,27 @@ function inicializarMapa() {
         });
 
         elementosDibujados.addLayer(capa);
-        parcelas.push({ layer: capa, estado: estado }); 
-    });
 
-    map.on('click', function(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        L.marker([lat, lng]).addTo(map).bindPopup(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`).openPopup();
+        const coordenadas = capa._latlngs[0].map(coordenada => [coordenada.lat, coordenada.lng]);
+
+        fetch('http://localhost:8080/campos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                coordenadas: coordenadas, 
+                estado: estado 
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Campo guardado:', data);
+        })
+        .catch(error => {
+            console.error('Error al guardar el campo:', error);
+        });
+
     });
 }
 
