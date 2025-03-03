@@ -72,10 +72,6 @@ document.querySelectorAll('.icono').forEach(item => {
             contenido.style.display = 'none';
         });
 
-        //const contenidoId = item.id + '-contenido';
-        //document.getElementById(contenidoId).style.display = 'block';
-
-        document.getElementById('contenido-title').textcontenido = item.textcontenido;
     });
 });
 
@@ -332,8 +328,35 @@ function inicializarMapa() {
     map.addLayer(elementosDibujados);
 
     const controlDibujo = new L.Control.Draw({
+        draw: {
+            polyline: {
+            shapeOptions: {
+                color: '#f357a1',
+                weight: 10
+            }
+            },
+            polygon: {
+            allowIntersection: false, 
+            drawError: {
+                color: '#e1e100', 
+                message: '<strong>No se permiten intersecciones al momento de dibujar un polígono!<strong>' 
+            },
+            shapeOptions: {
+                color: '#bada55'
+            }
+            },
+            rectangle: {
+            shapeOptions: {
+                clickable: false
+            },
+            },
+            circle: false,
+            circlemarker: false, 
+            marker: false,
+        },
         edit: {
-            featureGroup: elementosDibujados
+            featureGroup: elementosDibujados, 
+            remove: false
         }
     });
     map.addControl(controlDibujo);
@@ -348,8 +371,100 @@ function inicializarMapa() {
 
     map.on(L.Draw.Event.CREATED, function(event) {
         const capa = event.layer;
+        const formContainer = document.getElementById('contenedor-formulario');
 
-        const estado = prompt("¿Cuál es el estado de la parcela? (ej. cultivo, sin cultivar, etc.)");
+        formContainer.innerHTML = `
+            <h2>Agregar</h2>
+            <button id="registrar-campo-boton">Campo</button>
+            <button id="registrar-parcela-boton">Parcela</button>
+            <button id="cancelar-boton">Cancelar</button>
+        `;
+        formContainer.style.display = 'block';
+
+        document.getElementById('registrar-campo-boton').onclick = function () {
+            registrarMapa('campo', capa, elementosDibujados);
+        };
+    
+        document.getElementById('registrar-parcela-boton').onclick = function () {
+            registrarMapa('parcela', capa, elementosDibujados);
+        };
+
+        document.getElementById('cancelar-boton').onclick = function () {
+            formContainer.style.display = 'none';
+        };
+    }); 
+}
+
+function registrarMapa(tipo, capa, elementosDibujados) {
+    const formContainer = document.getElementById('contenedor-formulario');
+    let formContent = '';
+    let endpoint = '';
+
+    if (tipo === 'campo') {
+        endpoint = 'http://localhost:8080/campos';
+        formContent = `
+            <h2>Registrar Campo</h2>
+            <p>Nombre</p>
+            <input type="text" id="nombre" required>
+            <p>Superficie (en m²)</p>
+            <input type="number" id="superficie" required>
+            <p>Estado</p>
+            <select id="estado">
+                <option value="cultivo">Cultivo</option>
+                <option value="sin cultivar">Sin Cultivar</option>
+                <option value="en descanso">En Descanso</option>
+            </select>
+            <button id="registrar-mapa-boton">Registrar</button>
+            <button class="cancelar" id="cancelar-boton">Cancelar</button>
+        `;
+    } else if (tipo === 'parcela') {
+        endpoint = 'http://localhost:8080/parcelas';
+        formContent = `
+            <h2>Registrar Parcela</h2>
+            <p>Nombre</p>
+            <input type="text" id="nombre" required>
+            <p>Superficie (en m²)</p>
+            <input type="number" id="superficie" required>
+            <p>Estado</p>
+            <select id="estado">
+                <option value="cultivo">Cultivo</option>
+                <option value="sin cultivar">Sin Cultivar</option>
+                <option value="en descanso">En Descanso</option>
+            </select>
+            <button id="registrar-mapa-boton">Registrar Parcela</button>
+            <button class="cancelar" id="cancelar-boton">Cancelar</button>
+        `;
+    }
+
+    formContainer.innerHTML = formContent;
+    formContainer.style.display = 'block';
+
+    document.getElementById('registrar-mapa-boton').onclick = async function () {
+        const nombre = document.getElementById('nombre').value;
+        const superficie = document.getElementById('superficie').value;
+        const estado = document.getElementById('estado').value;
+        const coordenadas = capa._latlngs[0].map(coordenada => [coordenada.lat, coordenada.lng]);
+
+        let data = { nombre, superficie, estado, coordenadas };
+
+        try {
+            const response = await fetch(endpoint, {
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                method: "POST",
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) {
+                throw new Error('Error en el registro');
+            }
+            alert('Registro exitoso');
+            formContainer.style.display = 'none';
+            mostrarInventarios(tipo);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Hubo un problema al registrar');
+        }
 
         let color = definirColorCampo(estado);
         capa.setStyle({
@@ -359,28 +474,12 @@ function inicializarMapa() {
         });
 
         elementosDibujados.addLayer(capa);
+    };
 
-        const coordenadas = capa._latlngs[0].map(coordenada => [coordenada.lat, coordenada.lng]);
+    document.getElementById('cancelar-boton').onclick = function () {
+        formContainer.style.display = 'none';
+    };
 
-        fetch('http://localhost:8080/campos', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                coordenadas: coordenadas, 
-                estado: estado 
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Campo guardado:', data);
-        })
-        .catch(error => {
-            console.error('Error al guardar el campo:', error);
-        });
-
-    });
 }
 
 function procesarDatosSemillas(semillas) {
