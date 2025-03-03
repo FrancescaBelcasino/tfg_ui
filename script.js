@@ -356,7 +356,7 @@ function inicializarMapa() {
         },
         edit: {
             featureGroup: elementosDibujados, 
-            remove: false
+            remove: true
         }
     });
     map.addControl(controlDibujo);
@@ -366,8 +366,61 @@ function inicializarMapa() {
         .then(r => r.results)
         .then(r => r.forEach(campo => {
             let color = definirColorCampo(campo.estado);
-            L.polygon(campo.coordenadas, {color: color}).addTo(map);
-        }));    
+            let polygon = L.polygon(campo.coordenadas, {color: color}).addTo(map);
+
+            polygon.on('click', function(e) {
+                mostrarInfoCampo(campo, e.latlng);
+            });
+        }));  
+        
+        fetch('http://localhost:8080/parcelas')
+        .then(r => r.json())
+        .then(r => r.results)
+        .then(r => r.forEach(parcela => {
+            let color = definirColorCampo(parcela.estado);
+            let polygon = L.polygon(parcela.coordenadas, {color: color}).addTo(map);
+
+            polygon.on('click', function(e) {
+                mostrarInfoParcela(parcela, e.latlng);
+            });
+        }));  
+
+        function mostrarInfoCampo(campo, latlng) {
+            const formContainer = document.getElementById('contenedor-formulario');
+            let formContent = `
+                <h2>Información del Campo</h2>
+                <p>Nombre: ${campo.nombre}</p>
+                <p>Superficie: ${campo.superficie} m²</p>
+                <p>Estado: ${campo.estado}</p>
+                <button id="cerrar-boton">Cerrar</button>
+            `;
+        
+            formContainer.innerHTML = formContent;
+            formContainer.style.display = 'block';
+        
+            document.getElementById('cerrar-boton').onclick = function () {
+                formContainer.style.display = 'none';
+            };
+        }
+
+        function mostrarInfoParcela(parcela, latlng) {
+            const formContainer = document.getElementById('contenedor-formulario');
+            let formContent = `
+                <h2>Información de Parcela</h2>
+                <p>Nombre: ${parcela.nombre}</p>
+                <p>Superficie: ${parcela.superficie} m²</p>
+                <p>Estado: ${parcela.estado}</p>
+                <button id="cerrar-boton">Cerrar</button>
+            `;
+        
+            formContainer.innerHTML = formContent;
+            formContainer.style.display = 'block';
+        
+            document.getElementById('cerrar-boton').onclick = function () {
+                formContainer.style.display = 'none';
+            };
+        }
+        
 
     map.on(L.Draw.Event.CREATED, function(event) {
         const capa = event.layer;
