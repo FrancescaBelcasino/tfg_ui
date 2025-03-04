@@ -143,17 +143,17 @@ th, td {
     text-align: left;
 }
 
-.header-inventarios {
+.header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.header-inventarios h1 {
+.header h1 {
     margin: 0;
 }
 
-.header-inventarios div {
+.header div {
     display: flex;
     gap: 10px;
 }
@@ -236,7 +236,7 @@ th, td {
 }
 
 #map {
-    height: 400px;
+    height: 600px;
     width: 100%;
     margin-top: 20px;
 }
