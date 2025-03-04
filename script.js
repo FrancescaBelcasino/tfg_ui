@@ -337,12 +337,34 @@ function registrarInventario(tipo) {
 
 function definirColorParcela(estado) {
   switch (estado) {
-    case "cultivo":
-      return "green";
-    case "sin cultivar":
-      return "yellow";
-    case "en descanso":
-      return "orange";
+    case "Vacía":
+      return "#d0d0d0";
+    case "Cultivada":
+      return "#e76f51";
+    case "Alquilada":
+      return "#f4a261";
+    case "Con agroquímicos":
+      return "#ff6347";
+    case "En descanso":
+      return "#b0e0e6";
+    case "Con riego":
+      return "#2c3e50";
+    case "Sin riego":
+      return "#f39c12";
+    case "En preparación":
+      return "#f0e68c";
+    case "Con cosecha pendiente":
+      return "#8b0000";
+    case "Abandonada":
+      return "#a9a9a9";
+    case "Con rotación de cultivos":
+      return "#8b4513";
+    case "Con maleza":
+      return "#5d4037";
+    case "Con cobertura vegetal":
+      return "#f5f5dc";
+    case "Con sistema agroforestal":
+      return "#34495e";
     default:
       return "red";
   }
@@ -501,9 +523,20 @@ function registrarMapa(tipo, capa, elementosDibujados) {
             <input type="number" id="superficie" required>
             <p>Estado</p>
             <select id="estado">
-                <option value="cultivo">Cultivo</option>
-                <option value="sin cultivar">Sin Cultivar</option>
-                <option value="en descanso">En Descanso</option>
+                <option value="Vacía">Vacía</option>
+                <option value="Cultivada">Cultivada</option>
+                <option value="Alquilada">Alquilada</option>
+                <option value="Con agroquímicos">Con Agroquímicos</option>
+                <option value="En descanso">En Descanso</option>
+                <option value="Con riego">Con Riego</option>
+                <option value="Sin riego">Sin Riego</option>
+                <option value="En preparación">En Preparación</option>
+                <option value="Con cosecha pendiente">Con Cosecha Pendiente</option>
+                <option value="Abandonada">Abandonada</option>
+                <option value="Con rotación de cultivos">Con Rotación de Cultivos</option>
+                <option value="Con maleza">Con Maleza</option>
+                <option value="Con cobertura vegetal">Con Cobertura Vegetal</option>
+                <option value="Con sistema agroforestal">Con Sistema Agroforestal</option>
             </select>
             <button id="registrar-mapa-boton">Registrar Parcela</button>
             <button class="cancelar" id="cancelar-boton">Cancelar</button>
@@ -516,7 +549,6 @@ function registrarMapa(tipo, capa, elementosDibujados) {
   document.getElementById("registrar-mapa-boton").onclick = async function () {
     const nombre = document.getElementById("nombre").value;
     const superficie = document.getElementById("superficie").value;
-    //const estado = document.getElementById('estado').value;
     const coordenadas = capa._latlngs[0].map((coordenada) => [
       coordenada.lat,
       coordenada.lng,
