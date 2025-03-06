@@ -149,38 +149,43 @@ async function mostrarInventarios(tipo) {
   if (tipo === "semillas") {
     inventarioscontenido.innerHTML = `
             <table id="tabla-semillas">
-                <thead>
-                    <tr>
-                        <th>Semilla</th>
-                        <th>Variedad</th>
-                        <th>Cantidad Disponible</th>
-                        <th>Fecha Adquisición</th>
-                        <th>Fecha Expiración</th>
-                        <th>Proveedor</th>
+        <thead>
+          <tr>
+            <th>Semilla</th>
+            <th>Variedad</th>
+            <th>Cantidad Disponible</th>
+            <th>Fecha Adquisición</th>
+            <th>Fecha Expiración</th>
+            <th>Proveedor</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+            .then((r) => r.json())
+            .then((r) => r.results)
+            .then((semillas) =>
+              semillas
+                .map(
+                  (semilla) => `
+                    <tr data-id="${semilla.id}">
+                      <td>${semilla.nombre}</td>
+                      <td>${semilla.variedad}</td>
+                      <td>${semilla.cantidad}</td>
+                      <td>${semilla.fechaAdquisicion}</td>
+                      <td>${semilla.fechaExpiracion}</td>
+                      <td>${semilla.proveedor}</td>
+                      <td>
+                         <button class="editar-semilla" onclick="editarSemilla('${semilla.id}')">Editar</button>
+                        <button class="eliminar-semilla" onclick="eliminarSemilla('${semilla.id}')">Eliminar</button>
+                      </td>
                     </tr>
-                </thead>
-                <tbody>
-                    ${await fetch(`http://localhost:8080/inventarios/semillas`)
-                      .then((r) => r.json())
-                      .then((r) => r.results)
-                      .then((semillas) =>
-                        semillas
-                          .map(
-                            (semilla) => `
-                        <tr>
-                            <td>${semilla.nombre}</td>
-                            <td>${semilla.variedad}</td>
-                            <td>${semilla.cantidad}</td>
-                            <td>${semilla.fechaAdquisicion}</td>
-                            <td>${semilla.fechaExpiracion}</td>
-                            <td>${semilla.proveedor}</td>
-                        </tr>
-                    `
-                          )
-                          .join("")
-                      )}
-                </tbody>
-            </table>`;
+                  `
+                )
+                .join("")
+            )}
+        </tbody>
+      </table>`;
     botonAgregarSemillas.style.display = "block";
     botonAgregarGranos.style.display = "none";
     document.getElementById("boton-semillas").classList.add("activo");
@@ -188,38 +193,43 @@ async function mostrarInventarios(tipo) {
   } else {
     inventarioscontenido.innerHTML = `
             <table id="tabla-granos">
-                <thead>
-                    <tr>
-                        <th>Grano</th>
-                        <th>Variedad</th>
-                        <th>Cantidad Almacenada</th>
-                        <th>Fecha Cosecha</th>
-                        <th>Lugar de Almacenamiento</th>
-                        <th>Calidad</th>
+        <thead>
+          <tr>
+            <th>Grano</th>
+            <th>Variedad</th>
+            <th>Cantidad Almacenada</th>
+            <th>Fecha Cosecha</th>
+            <th>Lugar de Almacenamiento</th>
+            <th>Calidad</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${await fetch(`http://localhost:8080/inventarios/granos`)
+            .then((r) => r.json())
+            .then((r) => r.results)
+            .then((granos) =>
+              granos
+                .map(
+                  (grano) => `
+                    <tr data-id="${grano.id}">
+                      <td>${grano.nombre}</td>
+                      <td>${grano.variedad}</td>
+                      <td>${grano.cantidad}</td>
+                      <td>${grano.fechaCosecha}</td>
+                      <td>${grano.ubicacionAlmacenamiento}</td>
+                      <td>${grano.calidad}</td>
+                      <td>
+                         <button class="editar-grano" onclick="editarGrano('${grano.id}')">Editar</button>
+                        <button class="eliminar-grano" onclick="eliminarGrano('${grano.id}')">Eliminar</button>
+                      </td>
                     </tr>
-                </thead>
-                <tbody>
-                    ${await fetch(`http://localhost:8080/inventarios/granos`)
-                      .then((r) => r.json())
-                      .then((r) => r.results)
-                      .then((granos) =>
-                        granos
-                          .map(
-                            (grano) => `
-                        <tr>
-                            <td>${grano.nombre}</td>
-                            <td>${grano.variedad}</td>
-                            <td>${grano.cantidad}</td>
-                            <td>${grano.fechaCosecha}</td>
-                            <td>${grano.ubicacionAlmacenamiento}</td>
-                            <td>${grano.calidad}</td>
-                        </tr>
-                    `
-                          )
-                          .join("")
-                      )}
-                </tbody>
-            </table>`;
+                  `
+                )
+                .join("")
+            )}
+        </tbody>
+      </table>`;
     botonAgregarSemillas.style.display = "none";
     botonAgregarGranos.style.display = "block";
     document.getElementById("boton-granos").classList.add("activo");
@@ -239,6 +249,176 @@ async function mostrarInventarios(tipo) {
   };
   document.getElementById("boton-granos").onclick = function () {
     mostrarInventarios("granos");
+  };
+}
+
+async function editarSemilla(id) {
+  const response = await fetch(
+    `http://localhost:8080/inventarios/semillas/${id}`
+  );
+  const data = await response.json();
+  const semilla = data.results[0];
+
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+      <h2>Editar Semilla</h2>
+      <p>Semilla</p>
+      <input type="text" id="nombre" value="${semilla.nombre}" required>
+      <p>Variedad</p>
+      <input type="text" id="variedad" value="${semilla.variedad}" required>
+      <p>Cantidad</p>
+      <input type="number" id="cantidad" value="${semilla.cantidad}" required>
+      <p>Fecha de Adquisición</p>
+      <input type="date" id="fechaAdquisicion" value="${semilla.fechaAdquisicion}" required>
+      <p>Fecha de Expiración</p>
+      <input type="date" id="fechaExpiracion" value="${semilla.fechaExpiracion}" required>
+      <p>Proveedor</p>
+      <input type="text" id="proveedor" value="${semilla.proveedor}" required>
+      <button id="guardar-cambios">Guardar</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  document.getElementById("guardar-cambios").onclick = async function () {
+    const nombre = document.getElementById("nombre").value;
+    const variedad = document.getElementById("variedad").value;
+    const cantidad = parseFloat(document.getElementById("cantidad").value);
+    const fechaAdquisicion = document.getElementById("fechaAdquisicion").value;
+    const fechaExpiracion = document.getElementById("fechaExpiracion").value;
+    const proveedor = document.getElementById("proveedor").value;
+
+    const data = {
+      nombre,
+      variedad,
+      cantidad,
+      fechaAdquisicion,
+      fechaExpiracion,
+      proveedor,
+    };
+
+    await fetch(`http://localhost:8080/inventarios/semillas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    alert("Semilla actualizada correctamente");
+    formContainer.style.display = "none";
+    mostrarInventarios("semillas");
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
+async function eliminarSemilla(id) {
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+      <h2>Eliminar Semilla</h2>
+      <p>¿Estás seguro de que deseas eliminar esta semilla?</p>
+      <button id="confirmar-eliminar">Eliminar</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  document.getElementById("confirmar-eliminar").onclick = async function () {
+    await fetch(`http://localhost:8080/inventarios/semillas/${id}`, {
+      method: "DELETE",
+    });
+    alert("Semilla eliminada correctamente");
+    formContainer.style.display = "none";
+    mostrarInventarios("semillas");
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
+async function editarGrano(id) {
+  const response = await fetch(
+    `http://localhost:8080/inventarios/granos/${id}`
+  );
+  const data = await response.json();
+  const grano = data.results[0];
+
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+        <h2>Editar Grano</h2>
+        <p>Grano</p>
+        <input type="text" id="nombre" value="${grano.nombre}" required>
+        <p>Variedad</p>
+        <input type="text" id="variedad" value="${grano.variedad}" required>
+        <p>Cantidad</p>
+        <input type="number" id="cantidad" value="${grano.cantidad}" required>
+        <p>Fecha de Cosecha</p>
+        <input type="date" id="fechaCosecha" value="${grano.fechaCosecha}" required>
+        <p>Ubicación en Almacenamiento</p>
+        <input type="text" id="ubicacionAlmacenamiento" value="${grano.ubicacionAlmacenamiento}" required>
+        <p>Calidad</p>
+        <input type="text" id="calidad" value="${grano.calidad}" required>
+        <button id="guardar-cambios">Guardar</button>
+        <button class="cancelar" id="cancelar-boton">Cancelar</button>
+      `;
+  formContainer.style.display = "block";
+
+  document.getElementById("guardar-cambios").onclick = async function () {
+    const nombre = document.getElementById("nombre").value;
+    const variedad = document.getElementById("variedad").value;
+    const cantidad = parseFloat(document.getElementById("cantidad").value);
+    const fechaCosecha = document.getElementById("fechaCosecha").value;
+    const ubicacionAlmacenamiento = document.getElementById(
+      "ubicacionAlmacenamiento"
+    ).value;
+    const calidad = document.getElementById("calidad").value;
+
+    const data = {
+      nombre,
+      variedad,
+      cantidad,
+      fechaCosecha,
+      ubicacionAlmacenamiento,
+      calidad,
+    };
+
+    await fetch(`http://localhost:8080/inventarios/granos/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    alert("Grano actualizado correctamente");
+    formContainer.style.display = "none";
+    mostrarInventarios("granos");
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
+async function eliminarGrano(id) {
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+        <h2>Eliminar Grano</h2>
+        <p>¿Estás seguro de que deseas eliminar este grano?</p>
+        <button id="confirmar-eliminar">Eliminar</button>
+        <button class="cancelar" id="cancelar-boton">Cancelar</button>
+      `;
+  formContainer.style.display = "block";
+
+  document.getElementById("confirmar-eliminar").onclick = async function () {
+    await fetch(`http://localhost:8080/inventarios/granos/${id}`, {
+      method: "DELETE",
+    });
+    alert("Grano eliminado correctamente");
+    formContainer.style.display = "none";
+    mostrarInventarios("granos");
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
   };
 }
 
