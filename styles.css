@@ -1,243 +1,237 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f7f7f7;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f7f7f7;
+  font-family: "Montserrat", sans-serif;
 }
 
 #contenedor-login {
-    background-image: url("./assets/campo.png");
-    background-size: cover;
-    background-position: center;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  background-image: url("./assets/campo.png");
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-#formulario-login {
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+#formulario-login,
+#contenedor-formulario {
+  background-color: rgba(255, 255, 255, 255);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
 }
 
-#formulario-login h2 {
-    margin-bottom: 15px;
-    color: #333;
+#formulario-login h2,
+#contenedor-formulario h2 {
+  margin-bottom: 15px;
+  color: #333;
 }
 
-#formulario-login p {
-    margin-bottom: 20px;
-    font-size: 1rem;
-    color: #666;
+#formulario-login p,
+#contenedor-formulario p {
+  margin-bottom: 20px;
+  font-size: 1rem;
+  color: #666;
 }
 
-#formulario-login input {
-    margin-bottom: 20px;
-    width: 80%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 15px;
-    background-color: rgba(255, 255, 255, 0.8);
-    font-size: 1rem;
+#formulario-login input,
+#contenedor-formulario input {
+  margin-bottom: 20px;
+  width: 80%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
 }
 
-#formulario-login button {
-    width: 85%;
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    background-color: #228B22;
-    color: white;
-    font-size: 1rem;
+#formulario-login button,
+#contenedor-formulario button {
+  width: 85%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  background-color: #228b22;
+  color: white;
+  font-size: 1rem;
 }
 
-#formulario-login button:hover {
-    background-color: #1e7b1e;
-}
-
-.oculto {
-    display: none;
-}
-
-.barra-lateral {
-    width: 200px;
-    float: left;
-    background-color: #1a7431;
-    height: 100vmax;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-top: 20px;
-}
-
-.icono {
-    padding: 15px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    text-align: center;
-    width: 100%;
-}
-
-.icono:hover {
-    background-color: #145a24;
-}
-
-.activo {
-    background-color: #145a24;
-}
-
-.contenido {
-    margin-left: 220px;
-    padding: 20px;
-}
-
-.contenedor-canvas {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-}
-
-.grafico-comparativo {
-    max-width: 90%;
-    margin: 20px 0;
-    height: 250px;
-}
-
-canvas {
-    max-width: 45%;
-    margin: 20px 0;
-    height: 250px;
-}
-
-.boton-toggle {
-    padding: 10px 15px;
-    margin-right: 10px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f4f4f4;
-    transition: background-color 0.3s;
-}
-
-.boton-toggle.activo {
-    background-color: #28a745;
-    color: white;
-    border: 1px solid #28a745;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: left;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.header h1 {
-    margin: 0;
-}
-
-.header div {
-    display: flex;
-    gap: 10px;
-}
-
-.agregar-boton {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 30px;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    display: none;
+#formulario-login button:hover,
+#contenedor-formulario button:hover {
+  background-color: #1e7b1e;
 }
 
 #contenedor-formulario {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); 
-    z-index: 1000;
-    max-width: 400px; 
-    width: 90%; 
-    max-height: 90%; 
-    overflow-y: auto; 
-    box-sizing: border-box; 
-}
-
-#contenedor-formulario h2 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: #333;
-    text-align: center;
-}
-
-#contenedor-formulario input {
-    margin-bottom: 15px;
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 15px;
-    background-color: rgba(255, 255, 255, 0.9); 
-    font-size: 1rem;
-}
-
-#contenedor-formulario button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    background-color: #228B22;
-    color: white;
-    font-size: 1rem;
-}
-
-#contenedor-formulario button:hover {
-    background-color: #1e7b1e;
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 #contenedor-formulario .cancelar {
-    background-color: #ccc;
-    color: black;
-    margin-top: 10px;
+  background-color: #ccc;
+  color: black;
+  margin-top: 10px;
+  width: 85%;
 }
 
 #contenedor-formulario .cancelar:hover {
-    background-color: #aaa;
+  background-color: #aaa;
+}
+
+.oculto {
+  display: none;
+}
+
+.barra-lateral {
+  width: 200px;
+  float: left;
+  background-color: #1a7431;
+  height: 100vmax;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.icono {
+  padding: 15px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+  width: 100%;
+}
+
+.icono:hover {
+  background-color: #145a24;
+}
+
+.activo {
+  background-color: #145a24;
+}
+
+.contenido {
+  margin-left: 220px;
+  padding: 20px;
+}
+
+.contenedor-canvas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.grafico-comparativo {
+  max-width: 90%;
+  margin: 20px 0;
+  height: 250px;
+}
+
+canvas {
+  max-width: 45%;
+  margin: 20px 0;
+  height: 250px;
+}
+
+.boton-toggle {
+  padding: 10px 15px;
+  margin-right: 10px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f4f4f4;
+  transition: background-color 0.3s;
+}
+
+.boton-toggle.activo {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #28a745;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th,
+td {
+  border: 1px solid #f7f7f7;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #145a24;
+  color: white;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header h1 {
+  margin: 0;
+}
+
+.header div {
+  display: flex;
+  gap: 10px;
+}
+
+.agregar-boton {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 30px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  display: none;
 }
 
 #map {
-    height: 600px;
-    width: 100%;
-    margin-top: 20px;
+  height: 600px;
+  width: 100%;
+  margin-top: 20px;
 }
 
+.editar-semilla,
+.eliminar-semilla,
+.editar-grano,
+.eliminar-grano {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.editar-semilla img,
+.eliminar-semilla img,
+.editar-grano img,
+.eliminar-grano img {
+  width: 20px;
+  height: 20px;
+}

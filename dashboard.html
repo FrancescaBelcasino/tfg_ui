@@ -1,46 +1,56 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" contenido="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" contenido="width=device-width, initial-scale=1.0" />
     <title>TFG</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="contenedor-login">
-        <form id="formulario-login">
-            <h2>¡Hola!</h2>
-            <p>Inicia sesión con tu cuenta</p>
-            <input type="email" placeholder="Usuario" required>
-            <input type="password" placeholder="Contraseña" required>
-            <button type="submit" id="boton-iniciar-sesion">Iniciar Sesión</button>
-            <button type="button" id="boton-registrar">Registrar Usuario</button>
-        </form>
+      <form id="formulario-login">
+        <h2>¡Hola!</h2>
+        <p>Inicia sesión con tu cuenta</p>
+        <input type="email" placeholder="Usuario" required />
+        <input type="password" placeholder="Contraseña" required />
+        <button type="submit" id="boton-iniciar-sesion">Iniciar Sesión</button>
+        <button type="button" id="boton-registrar">Registrar Usuario</button>
+      </form>
     </div>
 
     <div id="contenedor-aplicacion" class="oculto">
-        <div class="barra-lateral">
-            <div class="icono" id="reportes">Reportes</div>
-            <div class="icono" id="campos">Campos</div>
-            <div class="icono" id="inventarios">Inventarios</div>
-        </div>
-        <div class="contenido" id="area-contenido">
-            <h1>Reportes</h1>
-            <div id="reportes-contenido"></div>
-        </div>
+      <div class="barra-lateral">
+        <div class="icono" id="reportes">Reportes</div>
+        <div class="icono" id="campos">Campos</div>
+        <div class="icono" id="inventarios">Inventarios</div>
+      </div>
+      <div class="contenido" id="area-contenido">
+        <h1>Reportes</h1>
+        <div id="reportes-contenido"></div>
+      </div>
     </div>
 
-    <div id="contenedor-formulario" style="display: none;"></div>
-    <div id="agregar-botones" style="display: none;">
-        <button class="agregar-boton" id="agregar-semillas">+</button>
-        <button class="agregar-boton" id="agregar-granos">+</button>
+    <div id="contenedor-formulario" style="display: none"></div>
+    <div id="agregar-botones" style="display: none">
+      <button class="agregar-boton" id="agregar-semillas">+</button>
+      <button class="agregar-boton" id="agregar-granos">+</button>
     </div>
 
     <script src="script.js"></script>
-</body>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+  </body>
 </html>

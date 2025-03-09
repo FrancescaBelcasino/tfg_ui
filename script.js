@@ -24,6 +24,17 @@ document
       async function () {
         const email = document.getElementById("email").value;
         const contrasena = document.getElementById("contrasena").value;
+
+        if (!validarContrasena(contrasena)) {
+          swal({
+            title: "Error",
+            text: "La contraseña debe tener al menos 12 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
+            icon: "error",
+            confirmButtonColor: "#228b22",
+          });
+          return;
+        }
+
         try {
           const response = await fetch(
             "http://localhost:8080/usuarios/registrar-usuario",
@@ -34,11 +45,21 @@ document
             }
           );
           if (!response.ok) throw new Error("Error en el registro");
-          alert("Registro exitoso");
+          swal({
+            title: "Registro exitoso",
+            text: "El usuario ha sido creado.",
+            icon: "success",
+            confirmButtonColor: "#228b22",
+          });
           returnToLogin();
         } catch (error) {
           console.error("Error:", error);
-          alert("Hubo un problema al registrar");
+          swal({
+            title: "Oops...",
+            text: "Ha ocurrido un problema al registrar los datos.",
+            icon: "error",
+            confirmButtonColor: "#228b22",
+          });
         }
       };
 
@@ -71,9 +92,24 @@ document
       mostrarContenido("reportes");
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un problema al iniciar sesión");
+      swal({
+        title: "Oops...",
+        text: "Ha ocurrido un problema al iniciar sesión.",
+        icon: "error",
+        confirmButtonColor: "#228b22",
+      });
     }
   });
+
+function validarContrasena(contrasena) {
+  return (
+    contrasena.length >= 12 &&
+    /[A-Z]/.test(contrasena) &&
+    /[a-z]/.test(contrasena) &&
+    /\d/.test(contrasena) &&
+    /[!@#$%^&*(),.?":{}|<>]/.test(contrasena)
+  );
+}
 
 document.querySelectorAll(".icono").forEach((item) => {
   item.addEventListener("click", (event) => {
@@ -176,8 +212,12 @@ async function mostrarInventarios(tipo) {
                       <td>${semilla.fechaExpiracion}</td>
                       <td>${semilla.proveedor}</td>
                       <td>
-                         <button class="editar-semilla" onclick="editarSemilla('${semilla.id}')">Editar</button>
-                        <button class="eliminar-semilla" onclick="eliminarSemilla('${semilla.id}')">Eliminar</button>
+                        <button class="editar-semilla" onclick="editarSemilla('${semilla.id}')">
+                            <img src="./assets/editar.png" alt="Editar">
+                        </button>
+                        <button class="eliminar-semilla" onclick="eliminarSemilla('${semilla.id}')">
+                            <img src="./assets/eliminar.png" alt="Eliminar">
+                        </button>
                       </td>
                     </tr>
                   `
@@ -220,8 +260,12 @@ async function mostrarInventarios(tipo) {
                       <td>${grano.ubicacionAlmacenamiento}</td>
                       <td>${grano.calidad}</td>
                       <td>
-                         <button class="editar-grano" onclick="editarGrano('${grano.id}')">Editar</button>
-                        <button class="eliminar-grano" onclick="eliminarGrano('${grano.id}')">Eliminar</button>
+                        <button class="editar-grano" onclick="editarGrano('${grano.id}')">
+                            <img src="./assets/editar.png" alt="Editar">
+                        </button>
+                        <button class="eliminar-grano" onclick="eliminarGrano('${grano.id}')">
+                            <img src="./assets/eliminar.png" alt="Eliminar">
+                        </button>
                       </td>
                     </tr>
                   `
@@ -302,7 +346,12 @@ async function editarSemilla(id) {
       body: JSON.stringify(data),
     });
 
-    alert("Semilla actualizada correctamente");
+    swal({
+      title: "Semilla actualizada exitosamente",
+      text: "El inventario ha sido actualizado.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
     formContainer.style.display = "none";
     mostrarInventarios("semillas");
   };
@@ -326,7 +375,12 @@ async function eliminarSemilla(id) {
     await fetch(`http://localhost:8080/inventarios/semillas/${id}`, {
       method: "DELETE",
     });
-    alert("Semilla eliminada correctamente");
+    swal({
+      title: "Semilla eliminada exitosamente",
+      text: "El inventario ha sido actualizado.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
     formContainer.style.display = "none";
     mostrarInventarios("semillas");
   };
@@ -388,7 +442,12 @@ async function editarGrano(id) {
       body: JSON.stringify(data),
     });
 
-    alert("Grano actualizado correctamente");
+    swal({
+      title: "Grano actualizado exitosamente",
+      text: "El inventario ha sido actualizado.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
     formContainer.style.display = "none";
     mostrarInventarios("granos");
   };
@@ -412,7 +471,12 @@ async function eliminarGrano(id) {
     await fetch(`http://localhost:8080/inventarios/granos/${id}`, {
       method: "DELETE",
     });
-    alert("Grano eliminado correctamente");
+    swal({
+      title: "Grano actualizado exitosamente",
+      text: "El inventario ha sido actualizado.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
     formContainer.style.display = "none";
     mostrarInventarios("granos");
   };
@@ -501,12 +565,22 @@ function registrarInventario(tipo) {
         if (!response.ok) {
           throw new Error("Error en el registro");
         }
-        alert("Registro exitoso");
+        swal({
+          title: "Registro exitoso",
+          text: "El inventario ha sido actualizado.",
+          icon: "success",
+          confirmButtonColor: "#228b22",
+        });
         formContainer.style.display = "none";
         mostrarInventarios(tipo);
       } catch (error) {
         console.error("Error:", error);
-        alert("Hubo un problema al registrar");
+        swal({
+          title: "Oops...",
+          text: "Ha ocurrido un problema al registrar los datos.",
+          icon: "error",
+          confirmButtonColor: "#228b22",
+        });
       }
     };
 
@@ -753,12 +827,22 @@ function registrarMapa(tipo, capa, elementosDibujados) {
       if (!response.ok) {
         throw new Error("Error en el registro");
       }
-      alert("Registro exitoso");
+      swal({
+        title: "Registro exitoso",
+        text: "El mapa ha sido actualizado.",
+        icon: "success",
+        confirmButtonColor: "#228b22",
+      });
       formContainer.style.display = "none";
       mostrarInventarios(tipo);
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un problema al registrar");
+      swal({
+        title: "Oops...",
+        text: "Ha ocurrido un problema al registrar los datos.",
+        icon: "error",
+        confirmButtonColor: "#228b22",
+      });
     }
 
     if (tipo === "campo") {
