@@ -106,6 +106,7 @@ body {
   flex-direction: column;
   align-items: center;
   padding-top: 20px;
+  position: fixed;
 }
 
 .icono {
@@ -234,4 +235,50 @@ th {
 .eliminar-grano img {
   width: 20px;
   height: 20px;
+}
+
+.tags {
+  margin-bottom: 10px;
+}
+
+.tag {
+  display: inline-block;
+  border-radius: 10px;
+  padding: 5px 10px;
+  margin-right: 5px;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.tag:hover {
+  opacity: 0.8;
+}
+
+select {
+  appearance: none;
+  background-color: #f8f9fa;
+  border: 2px solid #ced4da;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 16px;
+  color: #495057;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.3s ease-in-out;
+}
+
+select:hover {
+  border-color: #007bff;
+}
+
+select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+select[multiple] {
+  height: auto;
+  min-height: 100px;
+  overflow-y: auto;
 }

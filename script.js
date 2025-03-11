@@ -591,12 +591,19 @@ function registrarInventario(tipo) {
 
 function definirColorParcela(estado) {
   switch (estado) {
-    case "Vacía":
-      return "#d0d0d0";
     case "Cultivada":
       return "#e76f51";
+    case "Sin cultivar":
+      return "#d0d0d0";
     case "Alquilada":
       return "#f4a261";
+    default:
+      return "red";
+  }
+}
+
+function definirColorCaracteristica(caracteristica) {
+  switch (caracteristica) {
     case "Con agroquímicos":
       return "#ff6347";
     case "En descanso":
@@ -620,7 +627,7 @@ function definirColorParcela(estado) {
     case "Con sistema agroforestal":
       return "#34495e";
     default:
-      return "red";
+      return "#ccc";
   }
 }
 
@@ -693,8 +700,7 @@ function inicializarMapa() {
   function mostrarInfoCampo(campo, latlng) {
     const formContainer = document.getElementById("contenedor-formulario");
     let formContent = `
-            <h2>Información del Campo</h2>
-            <p>Nombre: ${campo.nombre}</p>
+            <h2>${campo.nombre}</h2>
             <p>Superficie: ${campo.superficie} m²</p>
             <button id="cerrar-boton">Cerrar</button>
         `;
@@ -709,9 +715,17 @@ function inicializarMapa() {
 
   function mostrarInfoParcela(parcela, latlng) {
     const formContainer = document.getElementById("contenedor-formulario");
+    let caracteristicasTags = parcela.caracteristicas
+      .map(
+        (c) =>
+          `<span class='tag' style='background-color: ${definirColorCaracteristica(
+            c
+          )};'>${c}</span>`
+      )
+      .join(" ");
     let formContent = `
-            <h2>Información de Parcela</h2>
-            <p>Nombre: ${parcela.nombre}</p>
+            <h2>${parcela.nombre}</h2>
+            <p>${caracteristicasTags}</p>
             <p>Superficie: ${parcela.superficie} m²</p>
             <p>Estado: ${parcela.estado}</p>
             <button id="cerrar-boton">Cerrar</button>
@@ -770,31 +784,34 @@ function registrarMapa(tipo, capa, elementosDibujados) {
   } else if (tipo === "parcela") {
     endpoint = "http://localhost:8080/parcelas";
     formContent = `
-            <h2>Registrar Parcela</h2>
-            <p>Nombre</p>
-            <input type="text" id="nombre" required>
-            <p>Superficie (en m²)</p>
-            <input type="number" id="superficie" required>
-            <p>Estado</p>
-            <select id="estado">
-                <option value="Vacía">Vacía</option>
-                <option value="Cultivada">Cultivada</option>
-                <option value="Alquilada">Alquilada</option>
-                <option value="Con agroquímicos">Con Agroquímicos</option>
-                <option value="En descanso">En Descanso</option>
-                <option value="Con riego">Con Riego</option>
-                <option value="Sin riego">Sin Riego</option>
-                <option value="En preparación">En Preparación</option>
-                <option value="Con cosecha pendiente">Con Cosecha Pendiente</option>
-                <option value="Abandonada">Abandonada</option>
-                <option value="Con rotación de cultivos">Con Rotación de Cultivos</option>
-                <option value="Con maleza">Con Maleza</option>
-                <option value="Con cobertura vegetal">Con Cobertura Vegetal</option>
-                <option value="Con sistema agroforestal">Con Sistema Agroforestal</option>
-            </select>
-            <button id="registrar-mapa-boton">Registrar Parcela</button>
-            <button class="cancelar" id="cancelar-boton">Cancelar</button>
-        `;
+      <h2>Registrar Parcela</h2>
+      <p>Nombre</p>
+      <input type="text" id="nombre" required>
+      <p>Superficie (en m²)</p>
+      <input type="number" id="superficie" required>
+      <p>Estado</p>
+      <select id="estado" required>
+        <option value="Cultivada">Cultivada</option>
+        <option value="Sin cultivar">Sin cultivar</option>
+        <option value="Alquilada">Alquilada</option>
+      </select>
+      <p>Características</p>
+      <select id="caracteristicas" multiple>
+        <option value="Con agroquímicos">Con agroquímicos</option>
+        <option value="En descanso">En descanso</option>
+        <option value="Con riego">Con riego</option>
+        <option value="Sin riego">Sin riego</option>
+        <option value="En preparación">En preparación</option>
+        <option value="Con cosecha pendiente">Con cosecha pendiente</option>
+        <option value="Abandonada">Abandonada</option>
+        <option value="Con rotación de cultivos">Con rotación de cultivos</option>
+        <option value="Con maleza">Con maleza</option>
+        <option value="Con cobertura vegetal">Con cobertura vegetal</option>
+        <option value="Con sistema agroforestal">Con sistema agroforestal</option>
+      </select>
+      <button id="registrar-mapa-boton">Registrar Parcela</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
   }
 
   formContainer.innerHTML = formContent;
@@ -809,12 +826,16 @@ function registrarMapa(tipo, capa, elementosDibujados) {
     ]);
 
     let estado = null;
+    let caracteristicas = null;
 
     if (tipo === "parcela") {
       estado = document.getElementById("estado").value;
+      caracteristicas = Array.from(
+        document.getElementById("caracteristicas").selectedOptions
+      ).map((o) => o.value);
     }
 
-    let data = { nombre, superficie, estado, coordenadas };
+    let data = { nombre, superficie, estado, caracteristicas, coordenadas };
 
     try {
       const response = await fetch(endpoint, {
