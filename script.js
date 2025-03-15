@@ -631,6 +631,137 @@ function definirColorCaracteristica(caracteristica) {
   }
 }
 
+async function editarParcela(id) {
+  const response = await fetch(`http://localhost:8080/parcelas/${id}`);
+  const data = await response.json();
+  const parcela = data.results[0];
+
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+    <h2>Editar Parcela</h2>
+    <p>Nombre</p>
+    <input type="text" id="nombre" value="${parcela.nombre}" required>
+    <p>Superficie (m²)</p>
+    <input type="number" id="superficie" value="${parcela.superficie}" required>
+    <p>Estado</p>
+      <select id="estado" required>
+        <option value="Seleccionar" disabled selected>Seleccionar</option>
+        <option value="Cultivada">Cultivada</option>
+        <option value="Sin cultivar">Sin cultivar</option>
+        <option value="Alquilada">Alquilada</option>
+      </select>
+      <div id="seleccionar-semillas" style="display:none;">
+        <p>Tipo de semilla</p>
+        <select id="tipoSemilla">
+          <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
+          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+            .then((r) => r.json())
+            .then((r) => r.results)
+            .then((semillas) =>
+              semillas
+                .map(
+                  (semilla) => `
+                  <option value="${semilla.id}" amount="${semilla.cantidad}">${semilla.nombre}</option>
+                  `
+                )
+                .join("")
+            )}
+        </select>
+        <p>Cantidad sembrada</p>
+        <input type="number" id="cantidadSembrada">
+      </div>      
+      <p>Características</p>
+      <select id="caracteristicas" multiple>
+        <option value="Con agroquímicos">Con agroquímicos</option>
+        <option value="En descanso">En descanso</option>
+        <option value="Con riego">Con riego</option>
+        <option value="Sin riego">Sin riego</option>
+        <option value="En preparación">En preparación</option>
+        <option value="Con cosecha pendiente">Con cosecha pendiente</option>
+        <option value="Abandonada">Abandonada</option>
+        <option value="Con rotación de cultivos">Con rotación de cultivos</option>
+        <option value="Con maleza">Con maleza</option>
+        <option value="Con cobertura vegetal">Con cobertura vegetal</option>
+        <option value="Con sistema agroforestal">Con sistema agroforestal</option>
+      </select>
+      <button id="guardar-cambios">Guardar</button>
+    <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  let estadoElement = document.getElementById("estado");
+  if (estadoElement) {
+    estadoElement.addEventListener("change", mostrarCamposCultivo);
+  }
+
+  document.getElementById("guardar-cambios").onclick = async function () {
+    let nombre = document.getElementById("nombre").value;
+    let superficie = document.getElementById("superficie").value;
+    let estado = document.getElementById("estado").value;
+    let semillaSeleccionada = document.getElementById("tipoSemilla");
+    let cantidadSeleccionada =
+      document.getElementById("cantidadSembrada").value;
+    let caracteristicas = Array.from(
+      document.getElementById("caracteristicas").selectedOptions
+    ).map((o) => o.value);
+
+    let data = {
+      nombre,
+      superficie,
+      estado,
+      semillaSeleccionada,
+      cantidadSeleccionada,
+      caracteristicas,
+    };
+
+    await fetch(`http://localhost:8080/parcelas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    swal({
+      title: "Parcela actualizada",
+      text: "La información del mapa ha sido actualizada.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
+    formContainer.style.display = "none";
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
+async function eliminarParcela(id) {
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+      <h2>Eliminar Parcela</h2>
+      <p>¿Estás seguro de que deseas eliminar esta parcela?</p>
+      <button id="confirmar-eliminar">Eliminar</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  document.getElementById("confirmar-eliminar").onclick = async function () {
+    await fetch(`http://localhost:8080/parcelas/${id}`, {
+      method: "DELETE",
+    });
+    swal({
+      title: "Parcela eliminada",
+      text: "La información del mapa ha sido actualizada.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
+    formContainer.style.display = "none";
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
 function inicializarMapa() {
   const map = L.map("map").setView([-32.8624, -63.7037], 13);
 
@@ -728,6 +859,8 @@ function inicializarMapa() {
             <p>${caracteristicasTags}</p>
             <p>Superficie: ${parcela.superficie} m²</p>
             <p>Estado: ${parcela.estado}</p>
+            <button class="editar-parcela" onclick="editarParcela('${parcela.id}')">Editar</button>
+            <button class="eliminar-parcela" onclick="eliminarParcela('${parcela.id}')">Eliminar</button>
             <button id="cerrar-boton">Cerrar</button>
         `;
 
@@ -807,7 +940,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
               semillas
                 .map(
                   (semilla) => `
-                  <option value="${semilla.id}">${semilla.nombre}</option>
+                  <option value="${semilla.id}" amount="${semilla.cantidad}">${semilla.nombre}</option>
                   `
                 )
                 .join("")
@@ -838,15 +971,15 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
   formContainer.innerHTML = formContent;
   formContainer.style.display = "block";
 
-  const estadoElement = document.getElementById("estado");
+  let estadoElement = document.getElementById("estado");
   if (estadoElement) {
     estadoElement.addEventListener("change", mostrarCamposCultivo);
   }
 
   document.getElementById("registrar-mapa-boton").onclick = async function () {
-    const nombre = document.getElementById("nombre").value;
-    const superficie = document.getElementById("superficie").value;
-    const coordenadas = capa._latlngs[0].map((coordenada) => [
+    let nombre = document.getElementById("nombre").value;
+    let superficie = document.getElementById("superficie").value;
+    let coordenadas = capa._latlngs[0].map((coordenada) => [
       coordenada.lat,
       coordenada.lng,
     ]);
@@ -862,6 +995,35 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
     }
 
     let data = { nombre, superficie, estado, caracteristicas, coordenadas };
+
+    if (estado === "Cultivada") {
+      let semillaSeleccionada = document.getElementById("tipoSemilla");
+      let cantidadSeleccionada =
+        document.getElementById("cantidadSembrada").value;
+      let cantidadMaxima =
+        semillaSeleccionada.options[
+          semillaSeleccionada.selectedIndex
+        ].getAttribute("amount");
+
+      if (parseFloat(cantidadSeleccionada) > parseFloat(cantidadMaxima)) {
+        alert("Elegir menor cantidad");
+        return;
+      }
+
+      data.semilla = semillaSeleccionada.value;
+      data.cantidadSembrada = cantidadSeleccionada;
+
+      await fetch(
+        `http://localhost:8080/inventarios/semillas/${data.semilla}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cantidad: cantidadMaxima - cantidadSeleccionada,
+          }),
+        }
+      );
+    }
 
     try {
       const response = await fetch(endpoint, {
