@@ -765,7 +765,7 @@ function inicializarMapa() {
   });
 }
 
-function registrarMapa(tipo, capa, elementosDibujados) {
+async function registrarMapa(tipo, capa, elementosDibujados) {
   const formContainer = document.getElementById("contenedor-formulario");
   let formContent = "";
   let endpoint = "";
@@ -791,10 +791,31 @@ function registrarMapa(tipo, capa, elementosDibujados) {
       <input type="number" id="superficie" required>
       <p>Estado</p>
       <select id="estado" required>
+        <option value="Seleccionar" disabled selected>Seleccionar</option>
         <option value="Cultivada">Cultivada</option>
         <option value="Sin cultivar">Sin cultivar</option>
         <option value="Alquilada">Alquilada</option>
       </select>
+      <div id="seleccionar-semillas" style="display:none;">
+        <p>Tipo de semilla</p>
+        <select id="tipoSemilla">
+          <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
+          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+            .then((r) => r.json())
+            .then((r) => r.results)
+            .then((semillas) =>
+              semillas
+                .map(
+                  (semilla) => `
+                  <option value="${semilla.id}">${semilla.nombre}</option>
+                  `
+                )
+                .join("")
+            )}
+        </select>
+        <p>Cantidad sembrada</p>
+        <input type="number" id="cantidadSembrada">
+      </div>      
       <p>Características</p>
       <select id="caracteristicas" multiple>
         <option value="Con agroquímicos">Con agroquímicos</option>
@@ -816,6 +837,11 @@ function registrarMapa(tipo, capa, elementosDibujados) {
 
   formContainer.innerHTML = formContent;
   formContainer.style.display = "block";
+
+  const estadoElement = document.getElementById("estado");
+  if (estadoElement) {
+    estadoElement.addEventListener("change", mostrarCamposCultivo);
+  }
 
   document.getElementById("registrar-mapa-boton").onclick = async function () {
     const nombre = document.getElementById("nombre").value;
@@ -887,6 +913,12 @@ function registrarMapa(tipo, capa, elementosDibujados) {
   document.getElementById("cancelar-boton").onclick = function () {
     formContainer.style.display = "none";
   };
+}
+
+function mostrarCamposCultivo() {
+  const estado = document.getElementById("estado")?.value;
+  document.getElementById("seleccionar-semillas").style.display =
+    estado === "Cultivada" ? "block" : "none";
 }
 
 function procesarDatosSemillas(semillas) {

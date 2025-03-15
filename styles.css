@@ -262,18 +262,17 @@ select {
   border-radius: 8px;
   padding: 10px;
   font-size: 16px;
-  color: #495057;
   cursor: pointer;
   outline: none;
   transition: border-color 0.3s ease-in-out;
 }
 
 select:hover {
-  border-color: #007bff;
+  border-color: #145a24;
 }
 
 select:focus {
-  border-color: #007bff;
+  border-color: #145a24;
   box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
