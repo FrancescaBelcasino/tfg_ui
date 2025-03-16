@@ -1,3 +1,5 @@
+const API_URL = 'http://localhost:8080'
+
 window.addEventListener("load", () => {
   if (localStorage.getItem("user") != null) {
       document.getElementById("contenedor-login").style.display = "none";
@@ -45,7 +47,7 @@ document
 
         try {
           const response = await fetch(
-            "http://localhost:8080/usuarios/registrar-usuario",
+            `${API_URL}/usuarios/registrar-usuario`,
             {
               headers: { "Content-Type": "application/json" },
               method: "POST",
@@ -91,7 +93,7 @@ document
 
     try {
       const response = await fetch(
-        "http://localhost:8080/usuarios/iniciar-sesion",
+        `${API_URL}/usuarios/iniciar-sesion`,
         {
           headers: { "Content-Type": "application/json" },
           method: "POST",
@@ -222,7 +224,7 @@ async function mostrarInventarios(tipo) {
           </tr>
         </thead>
         <tbody>
-          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+          ${await fetch(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
             .then((r) => r.results)
             .then((semillas) =>
@@ -270,7 +272,7 @@ async function mostrarInventarios(tipo) {
           </tr>
         </thead>
         <tbody>
-          ${await fetch(`http://localhost:8080/inventarios/granos`)
+          ${await fetch(`${API_URL}/inventarios/granos`)
             .then((r) => r.json())
             .then((r) => r.results)
             .then((granos) =>
@@ -323,7 +325,7 @@ async function mostrarInventarios(tipo) {
 
 async function editarSemilla(id) {
   const response = await fetch(
-    `http://localhost:8080/inventarios/semillas/${id}`
+    `${API_URL}/inventarios/semillas/${id}`
   );
   const data = await response.json();
   const semilla = data.results[0];
@@ -365,7 +367,7 @@ async function editarSemilla(id) {
       proveedor,
     };
 
-    await fetch(`http://localhost:8080/inventarios/semillas/${id}`, {
+    await fetch(`${API_URL}/inventarios/semillas/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -397,7 +399,7 @@ async function eliminarSemilla(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`http://localhost:8080/inventarios/semillas/${id}`, {
+    await fetch(`${API_URL}/inventarios/semillas/${id}`, {
       method: "DELETE",
     });
     swal({
@@ -417,7 +419,7 @@ async function eliminarSemilla(id) {
 
 async function editarGrano(id) {
   const response = await fetch(
-    `http://localhost:8080/inventarios/granos/${id}`
+    `${API_URL}/inventarios/granos/${id}`
   );
   const data = await response.json();
   const grano = data.results[0];
@@ -461,7 +463,7 @@ async function editarGrano(id) {
       calidad,
     };
 
-    await fetch(`http://localhost:8080/inventarios/granos/${id}`, {
+    await fetch(`${API_URL}/inventarios/granos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -493,7 +495,7 @@ async function eliminarGrano(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`http://localhost:8080/inventarios/granos/${id}`, {
+    await fetch(`${API_URL}/inventarios/granos/${id}`, {
       method: "DELETE",
     });
     swal({
@@ -517,7 +519,7 @@ function registrarInventario(tipo) {
   let endpoint = "";
 
   if (tipo === "semillas") {
-    endpoint = "http://localhost:8080/inventarios/semillas";
+    endpoint = `${API_URL}/inventarios/semillas`;
     formContent = `
             <h2>Registro de Semillas</h2>
             <p>Semilla</p>
@@ -536,7 +538,7 @@ function registrarInventario(tipo) {
             <button class="cancelar" id="cancelar-boton">Cancelar</button>
         `;
   } else if (tipo === "granos") {
-    endpoint = "http://localhost:8080/inventarios/granos";
+    endpoint = `${API_URL}/inventarios/granos`;
     formContent = `
             <h2>Registro de Granos</h2>
             <p>Grano</p>
@@ -657,7 +659,7 @@ function definirColorCaracteristica(caracteristica) {
 }
 
 async function editarParcela(id) {
-  const response = await fetch(`http://localhost:8080/parcelas/${id}`);
+  const response = await fetch(`${API_URL}/parcelas/${id}`);
   const data = await response.json();
   const parcela = data.results[0];
 
@@ -679,7 +681,7 @@ async function editarParcela(id) {
         <p>Tipo de semilla</p>
         <select id="tipoSemilla">
           <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
-          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+          ${await fetch(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
             .then((r) => r.results)
             .then((semillas) =>
@@ -739,7 +741,7 @@ async function editarParcela(id) {
       caracteristicas,
     };
 
-    await fetch(`http://localhost:8080/parcelas/${id}`, {
+    await fetch(`${API_URL}/parcelas/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -770,7 +772,7 @@ async function eliminarParcela(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`http://localhost:8080/parcelas/${id}`, {
+    await fetch(`${API_URL}/parcelas/${id}`, {
       method: "DELETE",
     });
     swal({
@@ -820,7 +822,7 @@ function inicializarMapa() {
   });
   map.addControl(controlDibujo);
 
-  fetch("http://localhost:8080/campos")
+  fetch(`${API_URL}/campos`)
     .then((r) => r.json())
     .then((r) => r.results)
     .then((r) =>
@@ -837,7 +839,7 @@ function inicializarMapa() {
       })
     );
 
-  fetch("http://localhost:8080/parcelas")
+  fetch(`${API_URL}/parcelas`)
     .then((r) => r.json())
     .then((r) => r.results)
     .then((r) =>
@@ -929,7 +931,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
   let endpoint = "";
 
   if (tipo === "campo") {
-    endpoint = "http://localhost:8080/campos";
+    endpoint = `${API_URL}/campos`;
     formContent = `
             <h2>Registrar Campo</h2>
             <p>Nombre</p>
@@ -940,7 +942,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
             <button class="cancelar" id="cancelar-boton">Cancelar</button>
         `;
   } else if (tipo === "parcela") {
-    endpoint = "http://localhost:8080/parcelas";
+    endpoint = `${API_URL}/parcelas`;
     formContent = `
       <h2>Registrar Parcela</h2>
       <p>Nombre</p>
@@ -958,7 +960,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
         <p>Tipo de semilla</p>
         <select id="tipoSemilla">
           <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
-          ${await fetch(`http://localhost:8080/inventarios/semillas`)
+          ${await fetch(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
             .then((r) => r.results)
             .then((semillas) =>
@@ -1039,7 +1041,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       data.cantidadSembrada = cantidadSeleccionada;
 
       await fetch(
-        `http://localhost:8080/inventarios/semillas/${data.semilla}`,
+        `${API_URL}/inventarios/semillas/${data.semilla}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -1163,7 +1165,7 @@ async function crearGraficos(tipo) {
     Chart.getChart("grafico-comparativo").destroy();
 
   if (tipo === "semillas") {
-    const semillas = await fetch("http://localhost:8080/inventarios/semillas")
+    const semillas = await fetch(`${API_URL}/inventarios/semillas`)
       .then((r) => r.json())
       .then((r) => r.results);
 
@@ -1215,7 +1217,7 @@ async function crearGraficos(tipo) {
     document.getElementById("boton-semillas").classList.add("activo");
     document.getElementById("boton-granos").classList.remove("activo");
   } else if (tipo === "granos") {
-    const granos = await fetch("http://localhost:8080/inventarios/granos")
+    const granos = await fetch(`${API_URL}/inventarios/granos`)
       .then((r) => r.json())
       .then((r) => r.results);
 
