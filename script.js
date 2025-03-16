@@ -49,7 +49,7 @@ document
           const response = await fetch(
             `${API_URL}/usuarios/registrar-usuario`,
             {
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json"},
               method: "POST",
               body: JSON.stringify({ email, contrasena }),
             }
@@ -743,7 +743,10 @@ async function editarParcela(id) {
 
     await fetch(`${API_URL}/parcelas/${id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Usuario-ID": localStorage.getItem("user") 
+      },
       body: JSON.stringify(data),
     });
 
@@ -774,6 +777,10 @@ async function eliminarParcela(id) {
   document.getElementById("confirmar-eliminar").onclick = async function () {
     await fetch(`${API_URL}/parcelas/${id}`, {
       method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Usuario-ID": localStorage.getItem("user") 
+      },
     });
     swal({
       title: "Parcela eliminada",
@@ -1023,14 +1030,11 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
 
     let data = { nombre, superficie, estado, caracteristicas, coordenadas };
 
+    let cantidadSeleccionada = document.getElementById("cantidadSembrada")?.value;
+    let semillaSeleccionada = document.getElementById("tipoSemilla");
+    let cantidadMaxima = semillaSeleccionada?.options[semillaSeleccionada.selectedIndex].getAttribute("amount");
+
     if (estado === "Cultivada") {
-      let semillaSeleccionada = document.getElementById("tipoSemilla");
-      let cantidadSeleccionada =
-        document.getElementById("cantidadSembrada").value;
-      let cantidadMaxima =
-        semillaSeleccionada.options[
-          semillaSeleccionada.selectedIndex
-        ].getAttribute("amount");
 
       if (parseFloat(cantidadSeleccionada) > parseFloat(cantidadMaxima)) {
         alert("Elegir menor cantidad");
@@ -1039,23 +1043,13 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
 
       data.semilla = semillaSeleccionada.value;
       data.cantidadSembrada = cantidadSeleccionada;
-
-      await fetch(
-        `${API_URL}/inventarios/semillas/${data.semilla}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            cantidad: cantidadMaxima - cantidadSeleccionada,
-          }),
-        }
-      );
     }
 
     try {
       const response = await fetch(endpoint, {
         headers: {
           "Content-Type": "application/json",
+          "Usuario-ID": localStorage.getItem("user") 
         },
         method: "POST",
         body: JSON.stringify(data),
@@ -1063,6 +1057,20 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       if (!response.ok) {
         throw new Error("Error en el registro");
       }
+
+      if (estado === "Cultivada") {
+        await fetch(
+          `${API_URL}/inventarios/semillas/${data.semilla}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cantidad: cantidadMaxima - cantidadSeleccionada,
+            }),
+          }
+        );
+      }
+      
       swal({
         title: "Registro exitoso",
         text: "El mapa ha sido actualizado.",
