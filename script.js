@@ -1,3 +1,11 @@
+window.addEventListener("load", () => {
+  if (localStorage.getItem("user") != null) {
+      document.getElementById("contenedor-login").style.display = "none";
+      document.getElementById("contenedor-aplicacion").style.display = "block";
+      mostrarContenido("reportes");
+  }
+})
+
 document
   .getElementById("boton-registrar")
   .addEventListener("click", function () {
@@ -45,6 +53,10 @@ document
             }
           );
           if (!response.ok) throw new Error("Error en el registro");
+
+          let responseBody = await response.json()
+          localStorage.setItem("user", responseBody.id)
+
           swal({
             title: "Registro exitoso",
             text: "El usuario ha sido creado.",
@@ -86,9 +98,14 @@ document
           body: JSON.stringify({ email, contrasena }),
         }
       );
-      if (!response.ok) throw new Error("Error en el inicio de sesión");
+      if (!response.ok) {throw new Error("Error en el inicio de sesión");}
+      
       document.getElementById("contenedor-login").style.display = "none";
       document.getElementById("contenedor-aplicacion").style.display = "block";
+
+      let responseBody = await response.json()
+      localStorage.setItem("user", responseBody.id)
+
       mostrarContenido("reportes");
     } catch (error) {
       console.error("Error:", error);
@@ -99,6 +116,14 @@ document
         confirmButtonColor: "#228b22",
       });
     }
+  });
+
+document
+  .getElementById("icono-logout")
+  .addEventListener("click", function() {
+    localStorage.removeItem("user")
+    document.getElementById("contenedor-login").style.display = "flex";
+    document.getElementById("contenedor-aplicacion").style.display = "none";
   });
 
 function validarContrasena(contrasena) {
