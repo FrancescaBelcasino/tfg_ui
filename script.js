@@ -1,12 +1,12 @@
-const API_URL = 'http://localhost:8080'
+const API_URL = "http://localhost:8080";
 
 window.addEventListener("load", () => {
   if (localStorage.getItem("user") != null) {
-      document.getElementById("contenedor-login").style.display = "none";
-      document.getElementById("contenedor-aplicacion").style.display = "block";
-      mostrarContenido("reportes");
+    document.getElementById("contenedor-login").style.display = "none";
+    document.getElementById("contenedor-aplicacion").style.display = "block";
+    mostrarContenido("reportes");
   }
-})
+});
 
 document
   .getElementById("boton-registrar")
@@ -49,15 +49,15 @@ document
           const response = await fetch(
             `${API_URL}/usuarios/registrar-usuario`,
             {
-              headers: { "Content-Type": "application/json"},
+              headers: { "Content-Type": "application/json" },
               method: "POST",
               body: JSON.stringify({ email, contrasena }),
             }
           );
           if (!response.ok) throw new Error("Error en el registro");
 
-          let responseBody = await response.json()
-          localStorage.setItem("user", responseBody.id)
+          let responseBody = await response.json();
+          localStorage.setItem("user", responseBody.id);
 
           swal({
             title: "Registro exitoso",
@@ -92,21 +92,20 @@ document
     ).value;
 
     try {
-      const response = await fetch(
-        `${API_URL}/usuarios/iniciar-sesion`,
-        {
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-          body: JSON.stringify({ email, contrasena }),
-        }
-      );
-      if (!response.ok) {throw new Error("Error en el inicio de sesión");}
-      
+      const response = await fetch(`${API_URL}/usuarios/iniciar-sesion`, {
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        body: JSON.stringify({ email, contrasena }),
+      });
+      if (!response.ok) {
+        throw new Error("Error en el inicio de sesión");
+      }
+
       document.getElementById("contenedor-login").style.display = "none";
       document.getElementById("contenedor-aplicacion").style.display = "block";
 
-      let responseBody = await response.json()
-      localStorage.setItem("user", responseBody.id)
+      let responseBody = await response.json();
+      localStorage.setItem("user", responseBody.id);
 
       mostrarContenido("reportes");
     } catch (error) {
@@ -120,13 +119,11 @@ document
     }
   });
 
-document
-  .getElementById("icono-logout")
-  .addEventListener("click", function() {
-    localStorage.removeItem("user")
-    document.getElementById("contenedor-login").style.display = "flex";
-    document.getElementById("contenedor-aplicacion").style.display = "none";
-  });
+document.getElementById("icono-logout").addEventListener("click", function () {
+  localStorage.removeItem("user");
+  document.getElementById("contenedor-login").style.display = "flex";
+  document.getElementById("contenedor-aplicacion").style.display = "none";
+});
 
 function validarContrasena(contrasena) {
   return (
@@ -324,9 +321,7 @@ async function mostrarInventarios(tipo) {
 }
 
 async function editarSemilla(id) {
-  const response = await fetch(
-    `${API_URL}/inventarios/semillas/${id}`
-  );
+  const response = await fetch(`${API_URL}/inventarios/semillas/${id}`);
   const data = await response.json();
   const semilla = data.results[0];
 
@@ -418,9 +413,7 @@ async function eliminarSemilla(id) {
 }
 
 async function editarGrano(id) {
-  const response = await fetch(
-    `${API_URL}/inventarios/granos/${id}`
-  );
+  const response = await fetch(`${API_URL}/inventarios/granos/${id}`);
   const data = await response.json();
   const grano = data.results[0];
 
@@ -658,6 +651,87 @@ function definirColorCaracteristica(caracteristica) {
   }
 }
 
+async function editarCampo(id) {
+  const response = await fetch(`${API_URL}/campos/${id}`);
+  const data = await response.json();
+  const campo = data.results[0];
+
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+    <h2>Editar Campo</h2>
+    <p>Nombre</p>
+    <input type="text" id="nombre" value="${campo.nombre}" required>
+    <p>Superficie (m²)</p>
+    <input type="number" id="superficie" value="${campo.superficie}" required>
+    <button id="guardar-cambios">Guardar</button>
+    <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  document.getElementById("guardar-cambios").onclick = async function () {
+    let nombre = document.getElementById("nombre").value;
+    let superficie = document.getElementById("superficie").value;
+
+    let data = {
+      nombre,
+      superficie,
+    };
+
+    await fetch(`${API_URL}/campos/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Usuario-ID": localStorage.getItem("user"),
+      },
+      body: JSON.stringify(data),
+    });
+
+    swal({
+      title: "Campo actualizado",
+      text: "La información del mapa ha sido actualizada.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
+    formContainer.style.display = "none";
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
+async function eliminarCampo(id) {
+  const formContainer = document.getElementById("contenedor-formulario");
+  formContainer.innerHTML = `
+      <h2>Eliminar Campo</h2>
+      <p>¿Estás seguro de que deseas eliminar este campo?</p>
+      <button id="confirmar-eliminar">Eliminar</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
+  formContainer.style.display = "block";
+
+  document.getElementById("confirmar-eliminar").onclick = async function () {
+    await fetch(`${API_URL}/campos/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Usuario-ID": localStorage.getItem("user"),
+      },
+    });
+    swal({
+      title: "Campo eliminado",
+      text: "La información del mapa ha sido actualizada.",
+      icon: "success",
+      confirmButtonColor: "#228b22",
+    });
+    formContainer.style.display = "none";
+  };
+
+  document.getElementById("cancelar-boton").onclick = function () {
+    formContainer.style.display = "none";
+  };
+}
+
 async function editarParcela(id) {
   const response = await fetch(`${API_URL}/parcelas/${id}`);
   const data = await response.json();
@@ -745,7 +819,7 @@ async function editarParcela(id) {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user") 
+        "Usuario-ID": localStorage.getItem("user"),
       },
       body: JSON.stringify(data),
     });
@@ -779,7 +853,7 @@ async function eliminarParcela(id) {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user") 
+        "Usuario-ID": localStorage.getItem("user"),
       },
     });
     swal({
@@ -867,6 +941,8 @@ function inicializarMapa() {
     let formContent = `
             <h2>${campo.nombre}</h2>
             <p>Superficie: ${campo.superficie} m²</p>
+            <button class="editar-campo" onclick="editarCampo('${campo.id}')">Editar</button>
+            <button class="eliminar-campo" onclick="eliminarCampo('${campo.id}')">Eliminar</button>
             <button id="cerrar-boton">Cerrar</button>
         `;
 
@@ -1030,12 +1106,15 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
 
     let data = { nombre, superficie, estado, caracteristicas, coordenadas };
 
-    let cantidadSeleccionada = document.getElementById("cantidadSembrada")?.value;
+    let cantidadSeleccionada =
+      document.getElementById("cantidadSembrada")?.value;
     let semillaSeleccionada = document.getElementById("tipoSemilla");
-    let cantidadMaxima = semillaSeleccionada?.options[semillaSeleccionada.selectedIndex].getAttribute("amount");
+    let cantidadMaxima =
+      semillaSeleccionada?.options[
+        semillaSeleccionada.selectedIndex
+      ].getAttribute("amount");
 
     if (estado === "Cultivada") {
-
       if (parseFloat(cantidadSeleccionada) > parseFloat(cantidadMaxima)) {
         alert("Elegir menor cantidad");
         return;
@@ -1049,7 +1128,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       const response = await fetch(endpoint, {
         headers: {
           "Content-Type": "application/json",
-          "Usuario-ID": localStorage.getItem("user") 
+          "Usuario-ID": localStorage.getItem("user"),
         },
         method: "POST",
         body: JSON.stringify(data),
@@ -1059,18 +1138,15 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       }
 
       if (estado === "Cultivada") {
-        await fetch(
-          `${API_URL}/inventarios/semillas/${data.semilla}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              cantidad: cantidadMaxima - cantidadSeleccionada,
-            }),
-          }
-        );
+        await fetch(`${API_URL}/inventarios/semillas/${data.semilla}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cantidad: cantidadMaxima - cantidadSeleccionada,
+          }),
+        });
       }
-      
+
       swal({
         title: "Registro exitoso",
         text: "El mapa ha sido actualizado.",
