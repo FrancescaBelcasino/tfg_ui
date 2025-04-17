@@ -1245,6 +1245,8 @@ function procesarDatosGranos(granos) {
 async function crearGraficos(tipo) {
   const graficos = document.getElementById(`contenedor-graficos`);
 
+  graficos.innerHTML = "";
+
   if (Chart.getChart("grafico-comparativo"))
     Chart.getChart("grafico-comparativo").destroy();
 
