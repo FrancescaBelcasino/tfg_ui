@@ -2,7 +2,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f7f7f7;
+  background-color: #ffffff;
   font-family: "Montserrat", sans-serif;
 }
 
@@ -64,6 +64,70 @@ body {
 
 #formulario-login button:hover,
 #contenedor-formulario button:hover {
+  background-color: #1e7b1e;
+}
+
+#enlace-recuperar-contrasena {
+  display: block;
+  margin: 18px auto 0 auto;
+  color: #228b22;
+  text-align: center;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+#enlace-recuperar-contrasena:hover {
+  text-decoration: underline;
+  color: #145a24;
+}
+
+#contenedor-reset {
+  background-image: url("./assets/campo.png");
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#formulario-reset {
+  background-color: rgba(255, 255, 255, 255);
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+#formulario-reset h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+#formulario-reset input {
+  margin-bottom: 20px;
+  width: 80%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+  background-color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+}
+
+#formulario-reset button {
+  width: 85%;
+  padding: 10px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  background-color: #228b22;
+  color: white;
+  font-size: 1rem;
+}
+
+#formulario-reset button:hover {
   background-color: #1e7b1e;
 }
 
@@ -137,22 +201,16 @@ body {
   padding: 20px;
 }
 
-.contenedor-canvas {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+.contenedor-graficos {
+  max-width: 100%;
+  margin: 20px 0;
+  height: 250px;
 }
 
 .grafico-comparativo {
-  max-width: 90%;
+  max-width: 100%;
   margin: 20px 0;
-  height: 250px;
-}
-
-canvas {
-  max-width: 45%;
-  margin: 20px 0;
-  height: 250px;
+  height: 500px;
 }
 
 .boton-toggle {

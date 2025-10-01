@@ -1,10 +1,51 @@
 const API_URL = "http://localhost:8080";
 
+async function fetchWithAuth(url, options = {}) {
+  const token = sessionStorage.getItem("jwt");
+  if (!token) {
+    document.getElementById("contenedor-aplicacion").style.display = "none";
+    document.getElementById("contenedor-login").style.display = "flex";
+    throw new Error("No token present");
+  }
+
+  options.headers = Object.assign({}, options.headers || {}, {
+    Authorization: "Bearer " + token,
+  });
+
+  try {
+    const resp = await fetch(url, options);
+    if (resp.status === 401 || resp.status === 403) {
+      sessionStorage.removeItem("jwt");
+      document.getElementById("contenedor-aplicacion").style.display = "none";
+      document.getElementById("contenedor-login").style.display = "flex";
+      throw new Error("Token expirado o inválido");
+    }
+    return resp;
+  } catch (error) {
+    console.error("Error en la petición:", error);
+    throw error;
+  }
+}
+
+function esAdmin() {
+  return sessionStorage.getItem("rol") === "ADMINISTRADOR";
+}
+
 window.addEventListener("load", () => {
-  if (localStorage.getItem("user") != null) {
+  if (window.location.pathname.includes("resetear-contrasena.html")) {
+    prepararCambioContrasena();
+    return;
+  }
+
+  const jwt = sessionStorage.getItem("jwt");
+
+  if (jwt) {
     document.getElementById("contenedor-login").style.display = "none";
     document.getElementById("contenedor-aplicacion").style.display = "block";
     mostrarContenido("reportes");
+  } else {
+    document.getElementById("contenedor-aplicacion").style.display = "none";
+    document.getElementById("contenedor-login").style.display = "flex";
   }
 });
 
@@ -37,7 +78,7 @@ document
 
         if (!validarContrasena(contrasena)) {
           swal({
-            title: "Error",
+            title: "Oops...",
             text: "La contraseña debe tener al menos 12 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
             icon: "error",
             confirmButtonColor: "#228b22",
@@ -57,7 +98,6 @@ document
           if (!response.ok) throw new Error("Error en el registro");
 
           let responseBody = await response.json();
-          localStorage.setItem("user", responseBody.id);
 
           swal({
             title: "Registro exitoso",
@@ -101,11 +141,14 @@ document
         throw new Error("Error en el inicio de sesión");
       }
 
+      let responseBody = await response.json();
+      sessionStorage.setItem("jwt", responseBody.token);
+
+      const payload = JSON.parse(atob(responseBody.token.split(".")[1]));
+      sessionStorage.setItem("rol", payload.rol);
+
       document.getElementById("contenedor-login").style.display = "none";
       document.getElementById("contenedor-aplicacion").style.display = "block";
-
-      let responseBody = await response.json();
-      localStorage.setItem("user", responseBody.id);
 
       mostrarContenido("reportes");
     } catch (error) {
@@ -119,8 +162,104 @@ document
     }
   });
 
+document.getElementById("enlace-recuperar-contrasena").onclick = function (e) {
+  e.preventDefault();
+
+  document.getElementById("formulario-login").style.display = "none";
+  document.getElementById("contenedor-formulario").innerHTML = `
+      <h2>Recuperar contraseña</h2>
+      <input type="email" id="email-recuperar" placeholder="Correo electrónico" required>
+      <button id="boton-enviar-recuperacion">Enviar</button>
+      <button class="cancelar" id="cancelar-recuperar">Cancelar</button>
+  `;
+  document.getElementById("contenedor-formulario").style.display = "block";
+
+  document.getElementById("boton-enviar-recuperacion").onclick =
+    async function () {
+      const email = document.getElementById("email-recuperar").value;
+      if (!email) {
+        swal({
+          title: "Oops...",
+          text: "ha ocurrido un problema al registrar los datos.",
+          icon: "error",
+        });
+        return;
+      }
+      await fetch(`${API_URL}/usuarios/recuperar-contrasena`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      swal({
+        title: "Listo!",
+        text: "Si el correo está registrado, recibirás un mensaje para restablecer tu contraseña.",
+        icon: "info",
+        confirmButtonColor: "#228b22",
+      });
+      document.getElementById("contenedor-formulario").style.display = "none";
+      document.getElementById("formulario-login").style.display = "block";
+    };
+
+  document.getElementById("cancelar-recuperar").onclick = function () {
+    document.getElementById("contenedor-formulario").style.display = "none";
+    document.getElementById("formulario-login").style.display = "block";
+  };
+};
+
+function prepararCambioContrasena() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+
+  const boton = document.getElementById("boton-cambiar-contra");
+  if (!boton) return;
+
+  boton.onclick = async function () {
+    const nuevaContrasena = document.getElementById("nueva-contrasena").value;
+    const repetirContrasena =
+      document.getElementById("repetir-contrasena").value;
+
+    if (!validarContrasena(nuevaContrasena)) {
+      swal({
+        title: "Oops...",
+        text: "La contraseña debe tener al menos 12 caracteres, una mayúscula, una minúscula, un número y un carácter especial.",
+        icon: "error",
+      });
+      return;
+    }
+
+    if (nuevaContrasena !== repetirContrasena) {
+      swal({
+        title: "Oops...",
+        text: "Las contraseñas no coinciden.",
+        icon: "error",
+      });
+      return;
+    }
+
+    const response = await fetch(`${API_URL}/usuarios/cambiar-contrasena`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, nuevaContrasena }),
+    });
+
+    if (response.ok) {
+      swal({
+        title: "Listo!",
+        text: "Tu contraseña fue actualizada. Ahora puedes iniciar sesión.",
+        icon: "success",
+      }).then(() => (window.location = "index.html"));
+    } else {
+      swal({
+        title: "Oops...",
+        text: "El enlace es inválido o ha expirado.",
+        icon: "error",
+      });
+    }
+  };
+}
+
 document.getElementById("icono-logout").addEventListener("click", function () {
-  localStorage.removeItem("user");
+  sessionStorage.removeItem("jwt");
   document.getElementById("contenedor-login").style.display = "flex";
   document.getElementById("contenedor-aplicacion").style.display = "none";
 });
@@ -172,6 +311,7 @@ function mostrarContenido(section) {
                 <div>
                     <button id="boton-semillas" class="boton-toggle activo">Semillas</button>
                     <button id="boton-granos" class="boton-toggle">Granos</button>
+                    <button id="boton-campos" class="boton-toggle">Campos</button>
                 </div>
             </div>
             <canvas id="grafico-comparativo"></canvas>
@@ -221,9 +361,9 @@ async function mostrarInventarios(tipo) {
           </tr>
         </thead>
         <tbody>
-          ${await fetch(`${API_URL}/inventarios/semillas`)
+          ${await fetchWithAuth(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
-            .then((r) => r.results)
+            .then((r) => r.resultados)
             .then((semillas) =>
               semillas
                 .map(
@@ -269,9 +409,9 @@ async function mostrarInventarios(tipo) {
           </tr>
         </thead>
         <tbody>
-          ${await fetch(`${API_URL}/inventarios/granos`)
+          ${await fetchWithAuth(`${API_URL}/inventarios/granos`)
             .then((r) => r.json())
-            .then((r) => r.results)
+            .then((r) => r.resultados)
             .then((granos) =>
               granos
                 .map(
@@ -321,9 +461,8 @@ async function mostrarInventarios(tipo) {
 }
 
 async function editarSemilla(id) {
-  const response = await fetch(`${API_URL}/inventarios/semillas/${id}`);
-  const data = await response.json();
-  const semilla = data.results[0];
+  const response = await fetchWithAuth(`${API_URL}/inventarios/semillas/${id}`);
+  const semilla = await response.json();
 
   const formContainer = document.getElementById("contenedor-formulario");
   formContainer.innerHTML = `
@@ -362,7 +501,7 @@ async function editarSemilla(id) {
       proveedor,
     };
 
-    await fetch(`${API_URL}/inventarios/semillas/${id}`, {
+    await fetchWithAuth(`${API_URL}/inventarios/semillas/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -394,7 +533,7 @@ async function eliminarSemilla(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`${API_URL}/inventarios/semillas/${id}`, {
+    await fetchWithAuth(`${API_URL}/inventarios/semillas/${id}`, {
       method: "DELETE",
     });
     swal({
@@ -413,9 +552,8 @@ async function eliminarSemilla(id) {
 }
 
 async function editarGrano(id) {
-  const response = await fetch(`${API_URL}/inventarios/granos/${id}`);
-  const data = await response.json();
-  const grano = data.results[0];
+  const response = await fetchWithAuth(`${API_URL}/inventarios/granos/${id}`);
+  const grano = await response.json();
 
   const formContainer = document.getElementById("contenedor-formulario");
   formContainer.innerHTML = `
@@ -456,7 +594,7 @@ async function editarGrano(id) {
       calidad,
     };
 
-    await fetch(`${API_URL}/inventarios/granos/${id}`, {
+    await fetchWithAuth(`${API_URL}/inventarios/granos/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -488,7 +626,7 @@ async function eliminarGrano(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`${API_URL}/inventarios/granos/${id}`, {
+    await fetchWithAuth(`${API_URL}/inventarios/granos/${id}`, {
       method: "DELETE",
     });
     swal({
@@ -543,7 +681,7 @@ function registrarInventario(tipo) {
             <p>Fecha de Cosecha</p>
             <input type="date" id="fechaCosecha" required>
             <p>Lugar de Almacenamiento</p>
-            <input type="text" id="lugarAlmacenamiento" required>
+            <input type="text" id="ubicacionAlmacenamiento" required>
             <p>Calidad</p>
             <input type="text" id="calidad" required>
             <button id="registrar-inventario-boton">Registrar</button>
@@ -568,14 +706,14 @@ function registrarInventario(tipo) {
         data.proveedor = document.getElementById("proveedor").value;
       } else if (tipo === "granos") {
         data.fechaCosecha = document.getElementById("fechaCosecha").value;
-        data.lugarAlmacenamiento = document.getElementById(
-          "lugarAlmacenamiento"
+        data.ubicacionAlmacenamiento = document.getElementById(
+          "ubicacionAlmacenamiento"
         ).value;
         data.calidad = document.getElementById("calidad").value;
       }
 
       try {
-        const response = await fetch(endpoint, {
+        const response = await fetchWithAuth(endpoint, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -612,7 +750,7 @@ function registrarInventario(tipo) {
 function definirColorParcela(estado) {
   switch (estado) {
     case "Cultivada":
-      return "#e76f51";
+      return "#6e8649";
     case "Sin cultivar":
       return "#d0d0d0";
     case "Alquilada":
@@ -652,17 +790,24 @@ function definirColorCaracteristica(caracteristica) {
 }
 
 async function editarCampo(id) {
-  const response = await fetch(`${API_URL}/campos/${id}`);
-  const data = await response.json();
-  const campo = data.results[0];
+  if (!esAdmin()) {
+    swal({
+      title: "Acción no permitida",
+      text: "Solo un usuario administrador puede editar un campo.",
+      icon: "warning",
+      confirmButtonColor: "#228b22",
+    });
+    return;
+  }
+
+  const response = await fetchWithAuth(`${API_URL}/campos/${id}`);
+  const campo = await response.json();
 
   const formContainer = document.getElementById("contenedor-formulario");
   formContainer.innerHTML = `
     <h2>Editar Campo</h2>
     <p>Nombre</p>
     <input type="text" id="nombre" value="${campo.nombre}" required>
-    <p>Superficie (m²)</p>
-    <input type="number" id="superficie" value="${campo.superficie}" required>
     <button id="guardar-cambios">Guardar</button>
     <button class="cancelar" id="cancelar-boton">Cancelar</button>
     `;
@@ -670,18 +815,15 @@ async function editarCampo(id) {
 
   document.getElementById("guardar-cambios").onclick = async function () {
     let nombre = document.getElementById("nombre").value;
-    let superficie = document.getElementById("superficie").value;
 
     let data = {
       nombre,
-      superficie,
     };
 
-    await fetch(`${API_URL}/campos/${id}`, {
+    await fetchWithAuth(`${API_URL}/campos/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user"),
       },
       body: JSON.stringify(data),
     });
@@ -701,6 +843,16 @@ async function editarCampo(id) {
 }
 
 async function eliminarCampo(id) {
+  if (!esAdmin()) {
+    swal({
+      title: "Acción no permitida",
+      text: "Solo un usuario administrador puede eliminar un campo.",
+      icon: "warning",
+      confirmButtonColor: "#228b22",
+    });
+    return;
+  }
+
   const formContainer = document.getElementById("contenedor-formulario");
   formContainer.innerHTML = `
       <h2>Eliminar Campo</h2>
@@ -711,11 +863,10 @@ async function eliminarCampo(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`${API_URL}/campos/${id}`, {
+    await fetchWithAuth(`${API_URL}/campos/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user"),
       },
     });
     swal({
@@ -733,17 +884,14 @@ async function eliminarCampo(id) {
 }
 
 async function editarParcela(id) {
-  const response = await fetch(`${API_URL}/parcelas/${id}`);
-  const data = await response.json();
-  const parcela = data.results[0];
+  const response = await fetchWithAuth(`${API_URL}/parcelas/${id}`);
+  const parcela = await response.json();
 
   const formContainer = document.getElementById("contenedor-formulario");
   formContainer.innerHTML = `
     <h2>Editar Parcela</h2>
     <p>Nombre</p>
     <input type="text" id="nombre" value="${parcela.nombre}" required>
-    <p>Superficie (m²)</p>
-    <input type="number" id="superficie" value="${parcela.superficie}" required>
     <p>Estado</p>
       <select id="estado" required>
         <option value="Seleccionar" disabled selected>Seleccionar</option>
@@ -751,13 +899,13 @@ async function editarParcela(id) {
         <option value="Sin cultivar">Sin cultivar</option>
         <option value="Alquilada">Alquilada</option>
       </select>
-      <div id="seleccionar-semillas" style="display:none;">
+      <div id="seleccionar-semillas" style="display:none">
         <p>Tipo de semilla</p>
         <select id="tipoSemilla">
           <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
-          ${await fetch(`${API_URL}/inventarios/semillas`)
+          ${await fetchWithAuth(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
-            .then((r) => r.results)
+            .then((r) => r.resultados)
             .then((semillas) =>
               semillas
                 .map(
@@ -797,7 +945,6 @@ async function editarParcela(id) {
 
   document.getElementById("guardar-cambios").onclick = async function () {
     let nombre = document.getElementById("nombre").value;
-    let superficie = document.getElementById("superficie").value;
     let estado = document.getElementById("estado").value;
     let semillaSeleccionada = document.getElementById("tipoSemilla");
     let cantidadSeleccionada =
@@ -808,18 +955,16 @@ async function editarParcela(id) {
 
     let data = {
       nombre,
-      superficie,
       estado,
       semillaSeleccionada,
       cantidadSeleccionada,
       caracteristicas,
     };
 
-    await fetch(`${API_URL}/parcelas/${id}`, {
+    await fetchWithAuth(`${API_URL}/parcelas/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user"),
       },
       body: JSON.stringify(data),
     });
@@ -849,11 +994,10 @@ async function eliminarParcela(id) {
   formContainer.style.display = "block";
 
   document.getElementById("confirmar-eliminar").onclick = async function () {
-    await fetch(`${API_URL}/parcelas/${id}`, {
+    await fetchWithAuth(`${API_URL}/parcelas/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
-        "Usuario-ID": localStorage.getItem("user"),
       },
     });
     swal({
@@ -903,9 +1047,9 @@ function inicializarMapa() {
   });
   map.addControl(controlDibujo);
 
-  fetch(`${API_URL}/campos`)
+  fetchWithAuth(`${API_URL}/campos`)
     .then((r) => r.json())
-    .then((r) => r.results)
+    .then((r) => r.resultados)
     .then((r) =>
       r.forEach((campo) => {
         let polygon = L.polygon(campo.coordenadas, {
@@ -920,9 +1064,9 @@ function inicializarMapa() {
       })
     );
 
-  fetch(`${API_URL}/parcelas`)
+  fetchWithAuth(`${API_URL}/parcelas`)
     .then((r) => r.json())
-    .then((r) => r.results)
+    .then((r) => r.resultados)
     .then((r) =>
       r.forEach((parcela) => {
         let color = definirColorParcela(parcela.estado);
@@ -940,11 +1084,18 @@ function inicializarMapa() {
     const formContainer = document.getElementById("contenedor-formulario");
     let formContent = `
             <h2>${campo.nombre}</h2>
-            <p>Superficie: ${campo.superficie} m²</p>
-            <button class="editar-campo" onclick="editarCampo('${campo.id}')">Editar</button>
-            <button class="eliminar-campo" onclick="eliminarCampo('${campo.id}')">Eliminar</button>
-            <button id="cerrar-boton">Cerrar</button>
-        `;
+            <p>Superficie en m²: ${campo.superficie} m²</p>
+            <p>Superficie en ha: ${campo.superficieHa} ha</p>
+            ${
+              esAdmin()
+                ? `
+      <button class="editar-campo" onclick="editarCampo('${campo.id}')">Editar</button>
+      <button class="eliminar-campo" onclick="eliminarCampo('${campo.id}')">Eliminar</button>
+    `
+                : ""
+            }
+    <button id="cerrar-boton">Cerrar</button>
+  `;
 
     formContainer.innerHTML = formContent;
     formContainer.style.display = "block";
@@ -964,11 +1115,20 @@ function inicializarMapa() {
           )};'>${c}</span>`
       )
       .join(" ");
+
+    let semillaCultivada = "";
+
+    if (parcela.estado === "Cultivada") {
+      semillaCultivada = `<p>Semilla cultivada: ${parcela.semillaNombre}</p>`;
+    }
+
     let formContent = `
             <h2>${parcela.nombre}</h2>
             <p>${caracteristicasTags}</p>
             <p>Superficie: ${parcela.superficie} m²</p>
+            <p>Superficie en ha: ${parcela.superficieHa} ha</p>
             <p>Estado: ${parcela.estado}</p>
+            ${semillaCultivada}
             <button class="editar-parcela" onclick="editarParcela('${parcela.id}')">Editar</button>
             <button class="eliminar-parcela" onclick="eliminarParcela('${parcela.id}')">Eliminar</button>
             <button id="cerrar-boton">Cerrar</button>
@@ -986,17 +1146,23 @@ function inicializarMapa() {
     const capa = event.layer;
     const formContainer = document.getElementById("contenedor-formulario");
 
-    formContainer.innerHTML = `
-            <h2>Agregar</h2>
-            <button id="registrar-campo-boton">Campo</button>
-            <button id="registrar-parcela-boton">Parcela</button>
-            <button id="cancelar-boton">Cancelar</button>
-        `;
+    let botones = "";
+    if (esAdmin()) {
+      botones += `<button id="registrar-campo-boton">Campo</button>`;
+    }
+    botones += `
+    <button id="registrar-parcela-boton">Parcela</button>
+    <button id="cancelar-boton">Cancelar</button>
+  `;
+
+    formContainer.innerHTML = `<h2>Agregar</h2>${botones}`;
     formContainer.style.display = "block";
 
-    document.getElementById("registrar-campo-boton").onclick = function () {
-      registrarMapa("campo", capa, elementosDibujados);
-    };
+    if (esAdmin() && document.getElementById("registrar-campo-boton")) {
+      document.getElementById("registrar-campo-boton").onclick = function () {
+        registrarMapa("campo", capa, elementosDibujados);
+      };
+    }
 
     document.getElementById("registrar-parcela-boton").onclick = function () {
       registrarMapa("parcela", capa, elementosDibujados);
@@ -1004,6 +1170,7 @@ function inicializarMapa() {
 
     document.getElementById("cancelar-boton").onclick = function () {
       formContainer.style.display = "none";
+      map.removeLayer(capa);
     };
   });
 }
@@ -1014,24 +1181,42 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
   let endpoint = "";
 
   if (tipo === "campo") {
+    if (!esAdmin()) {
+      swal({
+        title: "Acción no permitida",
+        text: "Solo un usuario administrador puede crear campos.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
     endpoint = `${API_URL}/campos`;
     formContent = `
-            <h2>Registrar Campo</h2>
-            <p>Nombre</p>
-            <input type="text" id="nombre" required>
-            <p>Superficie (en m²)</p>
-            <input type="number" id="superficie" required>
-            <button id="registrar-mapa-boton">Registrar</button>
-            <button class="cancelar" id="cancelar-boton">Cancelar</button>
-        `;
+      <h2>Registrar Campo</h2>
+      <p>Nombre</p>
+      <input type="text" id="nombre" required>
+      <button id="registrar-mapa-boton">Registrar</button>
+      <button class="cancelar" id="cancelar-boton">Cancelar</button>
+    `;
   } else if (tipo === "parcela") {
+    const campos = await fetchWithAuth(`${API_URL}/campos`)
+      .then((r) => r.json())
+      .then((r) => r.resultados);
+
     endpoint = `${API_URL}/parcelas`;
     formContent = `
       <h2>Registrar Parcela</h2>
+      <p>Campo</p>
+      <select id="campoIdParcela" required>
+        <option value="" disabled selected>Selecciona un campo</option>
+        ${campos
+          .map(
+            (campo) => `<option value="${campo.id}">${campo.nombre}</option>`
+          )
+          .join("")}
+      </select>
       <p>Nombre</p>
       <input type="text" id="nombre" required>
-      <p>Superficie (en m²)</p>
-      <input type="number" id="superficie" required>
       <p>Estado</p>
       <select id="estado" required>
         <option value="Seleccionar" disabled selected>Seleccionar</option>
@@ -1043,9 +1228,9 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
         <p>Tipo de semilla</p>
         <select id="tipoSemilla">
           <option value="Seleccionar" disabled selected>Seleccione una semilla</option>
-          ${await fetch(`${API_URL}/inventarios/semillas`)
+          ${await fetchWithAuth(`${API_URL}/inventarios/semillas`)
             .then((r) => r.json())
-            .then((r) => r.results)
+            .then((r) => r.resultados)
             .then((semillas) =>
               semillas
                 .map(
@@ -1073,7 +1258,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
         <option value="Con cobertura vegetal">Con cobertura vegetal</option>
         <option value="Con sistema agroforestal">Con sistema agroforestal</option>
       </select>
-      <button id="registrar-mapa-boton">Registrar Parcela</button>
+      <button id="registrar-mapa-boton">Registrar</button>
       <button class="cancelar" id="cancelar-boton">Cancelar</button>
     `;
   }
@@ -1088,23 +1273,25 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
 
   document.getElementById("registrar-mapa-boton").onclick = async function () {
     let nombre = document.getElementById("nombre").value;
-    let superficie = document.getElementById("superficie").value;
     let coordenadas = capa._latlngs[0].map((coordenada) => [
       coordenada.lat,
       coordenada.lng,
     ]);
 
+    let campoId = null;
     let estado = null;
     let caracteristicas = null;
 
     if (tipo === "parcela") {
+      campoId = document.getElementById("campoIdParcela").value;
       estado = document.getElementById("estado").value;
       caracteristicas = Array.from(
         document.getElementById("caracteristicas").selectedOptions
       ).map((o) => o.value);
     }
 
-    let data = { nombre, superficie, estado, caracteristicas, coordenadas };
+    let data = { nombre, estado, caracteristicas, coordenadas };
+    if (campoId) data.campoId = campoId;
 
     let cantidadSeleccionada =
       document.getElementById("cantidadSembrada")?.value;
@@ -1115,20 +1302,47 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       ].getAttribute("amount");
 
     if (estado === "Cultivada") {
-      if (parseFloat(cantidadSeleccionada) > parseFloat(cantidadMaxima)) {
-        alert("Elegir menor cantidad");
+      if (!cantidadSeleccionada || isNaN(cantidadSeleccionada)) {
+        swal({
+          title: "Cantidad inválida",
+          text: "Por favor ingrese un número válido.",
+          icon: "warning",
+          confirmButtonColor: "#228b22",
+        });
+        return;
+      }
+
+      let cantidad = parseFloat(cantidadSeleccionada);
+      let maximo = parseFloat(cantidadMaxima);
+
+      if (cantidad <= 0) {
+        swal({
+          title: "Cantidad inválida",
+          text: "La cantidad debe ser mayor que 0.",
+          icon: "warning",
+          confirmButtonColor: "#228b22",
+        });
+        return;
+      }
+
+      if (cantidad > maximo) {
+        swal({
+          title: "Cantidad excedida",
+          text: `No puedes sembrar más de ${maximo} unidades.`,
+          icon: "warning",
+          confirmButtonColor: "#228b22",
+        });
         return;
       }
 
       data.semilla = semillaSeleccionada.value;
-      data.cantidadSembrada = cantidadSeleccionada;
+      data.cantidadSembrada = cantidad;
     }
 
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetchWithAuth(endpoint, {
         headers: {
           "Content-Type": "application/json",
-          "Usuario-ID": localStorage.getItem("user"),
         },
         method: "POST",
         body: JSON.stringify(data),
@@ -1138,7 +1352,7 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       }
 
       if (estado === "Cultivada") {
-        await fetch(`${API_URL}/inventarios/semillas/${data.semilla}`, {
+        await fetchWithAuth(`${API_URL}/inventarios/semillas/${data.semilla}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1242,6 +1456,33 @@ function procesarDatosGranos(granos) {
   return { anios, tiposGranos, datosPorAnio };
 }
 
+function procesarDatosCampos(campos, parcelas) {
+  const estados = [...new Set(campos.map((c) => c.estado || "Sin estado"))];
+  const cantidadPorEstado = {};
+  estados.forEach((estado) => (cantidadPorEstado[estado] = 0));
+  campos.forEach(({ estado }) => {
+    cantidadPorEstado[estado || "Sin estado"]++;
+  });
+
+  const camposIds = campos.map((c) => c.id);
+  const cantidadParcelasPorCampo = {};
+  camposIds.forEach((id) => (cantidadParcelasPorCampo[id] = 0));
+  parcelas.forEach(({ campoId }) => {
+    if (campoId && cantidadParcelasPorCampo[campoId] !== undefined)
+      cantidadParcelasPorCampo[campoId]++;
+  });
+
+  const nombresCampos = campos.map((c) => c.nombre);
+
+  return {
+    estados,
+    cantidadPorEstado,
+    cantidadParcelasPorCampo,
+    nombresCampos,
+    campos,
+  };
+}
+
 async function crearGraficos(tipo) {
   const graficos = document.getElementById(`contenedor-graficos`);
 
@@ -1251,12 +1492,28 @@ async function crearGraficos(tipo) {
     Chart.getChart("grafico-comparativo").destroy();
 
   if (tipo === "semillas") {
-    const semillas = await fetch(`${API_URL}/inventarios/semillas`)
+    const semillas = await fetchWithAuth(`${API_URL}/inventarios/semillas`)
       .then((r) => r.json())
-      .then((r) => r.results);
+      .then((r) => r.resultados);
+
+    if (!semillas || semillas.length === 0) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos disponibles para mostrar los reportes de semillas.
+        </div>`;
+      return;
+    }
 
     const { anios, tiposSemillas, datosPorAnio } =
       procesarDatosSemillas(semillas);
+
+    if (!anios.length || !tiposSemillas.length) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos suficientes para generar los gráficos de semillas.
+        </div>`;
+      return;
+    }
 
     const ctxComparativo = document
       .getElementById("grafico-comparativo")
@@ -1302,12 +1559,29 @@ async function crearGraficos(tipo) {
 
     document.getElementById("boton-semillas").classList.add("activo");
     document.getElementById("boton-granos").classList.remove("activo");
+    document.getElementById("boton-campos").classList.remove("activo");
   } else if (tipo === "granos") {
-    const granos = await fetch(`${API_URL}/inventarios/granos`)
+    const granos = await fetchWithAuth(`${API_URL}/inventarios/granos`)
       .then((r) => r.json())
-      .then((r) => r.results);
+      .then((r) => r.resultados);
+
+    if (!granos || granos.length === 0) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos disponibles para mostrar los reportes de granos.
+        </div>`;
+      return;
+    }
 
     const { anios, tiposGranos, datosPorAnio } = procesarDatosGranos(granos);
+
+    if (!anios.length || !tiposGranos.length) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos suficientes para generar los gráficos de granos.
+        </div>`;
+      return;
+    }
 
     const ctxComparativo = document
       .getElementById("grafico-comparativo")
@@ -1353,6 +1627,182 @@ async function crearGraficos(tipo) {
 
     document.getElementById("boton-semillas").classList.remove("activo");
     document.getElementById("boton-granos").classList.add("activo");
+    document.getElementById("boton-campos").classList.remove("activo");
+  } else if (tipo === "campos") {
+    const campos = await fetchWithAuth(`${API_URL}/campos`)
+      .then((r) => r.json())
+      .then((r) => r.resultados);
+    const parcelas = await fetchWithAuth(`${API_URL}/parcelas`)
+      .then((r) => r.json())
+      .then((r) => r.resultados);
+
+    if (!campos || campos.length === 0 || !parcelas || parcelas.length === 0) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos disponibles para mostrar los reportes de campos.
+        </div>`;
+      return;
+    }
+
+    const semillas = await fetchWithAuth(`${API_URL}/inventarios/semillas`)
+      .then((r) => r.json())
+      .then((r) => r.resultados);
+
+    const {
+      estados,
+      cantidadPorEstado,
+      cantidadParcelasPorCampo,
+      nombresCampos,
+      campos: listaCampos,
+    } = procesarDatosCampos(campos, parcelas);
+
+    if (!nombresCampos.length) {
+      graficos.innerHTML = `
+        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
+          No hay datos suficientes para generar los gráficos de campos.
+        </div>`;
+      return;
+    }
+
+    const ctxComparativo = document
+      .getElementById("grafico-comparativo")
+      .getContext("2d");
+    const superficies = campos.map((c) => c.superficie);
+
+    new Chart(ctxComparativo, {
+      type: "bar",
+      data: {
+        labels: nombresCampos,
+        datasets: [
+          {
+            label: "Superficie (m²)",
+            data: superficies,
+            backgroundColor: "rgba(75, 192, 192, 0.3)",
+            borderColor: "rgba(75, 192, 192, 1)",
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: "Comparativa de Superficie de Campos",
+          },
+        },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+
+    const estadosParcelas = [
+      ...new Set(parcelas.map((p) => p.estado || "Sin estado")),
+    ];
+    const cantidadPorEstadoParcela = estadosParcelas.map(
+      (estado) =>
+        parcelas.filter((p) => (p.estado || "Sin estado") === estado).length
+    );
+    const pieParcelasDiv = document.createElement("div");
+    pieParcelasDiv.style.width = "270px";
+    pieParcelasDiv.style.height = "270px";
+    pieParcelasDiv.style.margin = "0 auto";
+    const pieParcelas = document.createElement("canvas");
+    pieParcelas.width = 270;
+    pieParcelas.height = 270;
+    pieParcelasDiv.appendChild(pieParcelas);
+    graficos.appendChild(pieParcelasDiv);
+    new Chart(pieParcelas.getContext("2d"), {
+      type: "pie",
+      data: {
+        labels: estadosParcelas,
+        datasets: [
+          {
+            data: cantidadPorEstadoParcela,
+            backgroundColor: estadosParcelas.map(
+              (_, i) => `hsl(${(i * 60) % 360}, 70%, 70%)`
+            ),
+          },
+        ],
+      },
+      options: {
+        plugins: {
+          legend: { position: "bottom" },
+          title: { display: true, text: "Estados de las parcelas" },
+        },
+      },
+    });
+
+    const ctxParcelas = document.createElement("canvas");
+    new Chart(ctxParcelas, {
+      type: "bar",
+      data: {
+        labels: nombresCampos,
+        datasets: [
+          {
+            label: "Parcelas por campo",
+            data: listaCampos.map((c) => cantidadParcelasPorCampo[c.id] || 0),
+            backgroundColor: "rgba(255, 205, 86, 0.7)",
+            borderColor: "rgba(255, 205, 86, 1)",
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: "Parcelas por campo",
+          },
+        },
+        scales: { y: { beginAtZero: true } },
+      },
+    });
+    graficos.appendChild(ctxParcelas);
+
+    const semillasMap = Object.fromEntries(
+      semillas.map((s) => [s.id, s.nombre])
+    );
+    const nombresParcelas = parcelas.map((p) => p.nombre);
+    const nombresSemillasEnParcela = parcelas.map((p) =>
+      p.semilla ? semillasMap[p.semilla] || "Desconocida" : "Sin semilla"
+    );
+    const ctxSemillaParcela = document.createElement("canvas");
+    ctxSemillaParcela.width = 470;
+    ctxSemillaParcela.height = 200;
+    graficos.appendChild(ctxSemillaParcela);
+    new Chart(ctxSemillaParcela.getContext("2d"), {
+      type: "bar",
+      data: {
+        labels: nombresParcelas,
+        datasets: [
+          {
+            label: "Semilla cultivada",
+            data: nombresParcelas.map((_, i) => 1),
+            backgroundColor: nombresSemillasEnParcela.map(
+              (s, i) => `hsl(${(i * 60) % 360}, 90%, 60%)`
+            ),
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: "Semilla cultivada por parcela" },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return "Semilla: " + nombresSemillasEnParcela[ctx.dataIndex];
+              },
+            },
+          },
+        },
+        scales: { x: { display: false } },
+      },
+    });
+
+    document.getElementById("boton-semillas").classList.remove("activo");
+    document.getElementById("boton-granos").classList.remove("activo");
+    document.getElementById("boton-campos").classList.add("activo");
   }
 
   document.getElementById("boton-semillas").onclick = function () {
@@ -1361,5 +1811,9 @@ async function crearGraficos(tipo) {
 
   document.getElementById("boton-granos").onclick = function () {
     crearGraficos("granos");
+  };
+
+  document.getElementById("boton-campos").onclick = function () {
+    crearGraficos("campos");
   };
 }
