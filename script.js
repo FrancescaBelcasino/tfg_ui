@@ -120,6 +120,10 @@ document
     document.getElementById("cancelar-boton-registrar").onclick = returnToLogin;
   });
 
+let intentosFallidos = JSON.parse(
+  sessionStorage.getItem("intentosFallidos") || "{}"
+);
+
 document
   .getElementById("boton-iniciar-sesion")
   .addEventListener("click", async function (event) {
@@ -137,9 +141,32 @@ document
         method: "POST",
         body: JSON.stringify({ email, contrasena }),
       });
+
       if (!response.ok) {
-        throw new Error("Error en el inicio de sesión");
+        intentosFallidos[email] = (intentosFallidos[email] || 0) + 1;
+        sessionStorage.setItem(
+          "intentosFallidos",
+          JSON.stringify(intentosFallidos)
+        );
+
+        if (intentosFallidos[email] >= 5) {
+          swal({
+            title: "Cuenta bloqueada",
+            text: "Tu cuenta fue bloqueada por intentos fallidos. Revisá tu email para restablecer la contraseña.",
+            icon: "error",
+            confirmButtonColor: "#228b22",
+          });
+          return;
+        }
+
+        throw new Error("Credenciales incorrectas");
       }
+
+      intentosFallidos[email] = 0;
+      sessionStorage.setItem(
+        "intentosFallidos",
+        JSON.stringify(intentosFallidos)
+      );
 
       let responseBody = await response.json();
       sessionStorage.setItem("jwt", responseBody.token);
@@ -155,7 +182,7 @@ document
       console.error("Error:", error);
       swal({
         title: "Oops...",
-        text: "Ha ocurrido un problema al iniciar sesión.",
+        text: error.message || "Ha ocurrido un problema al iniciar sesión.",
         icon: "error",
         confirmButtonColor: "#228b22",
       });
@@ -210,7 +237,7 @@ function prepararCambioContrasena() {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
 
-  const boton = document.getElementById("boton-cambiar-contra");
+  const boton = document.getElementById("boton-cambiar-contrasena");
   if (!boton) return;
 
   boton.onclick = async function () {
@@ -492,6 +519,23 @@ async function editarSemilla(id) {
     const fechaExpiracion = document.getElementById("fechaExpiracion").value;
     const proveedor = document.getElementById("proveedor").value;
 
+    if (
+      !nombre ||
+      !variedad ||
+      !cantidad ||
+      !fechaAdquisicion ||
+      !fechaExpiracion ||
+      !proveedor
+    ) {
+      swal({
+        title: "Campos incompletos",
+        text: "Por favor completa todos los campos antes de guardar.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
+
     const data = {
       nombre,
       variedad,
@@ -584,6 +628,23 @@ async function editarGrano(id) {
       "ubicacionAlmacenamiento"
     ).value;
     const calidad = document.getElementById("calidad").value;
+
+    if (
+      !nombre ||
+      !variedad ||
+      !cantidad ||
+      !fechaCosecha ||
+      !ubicacionAlmacenamiento ||
+      !calidad
+    ) {
+      swal({
+        title: "Campos incompletos",
+        text: "Por favor completa todos los campos antes de guardar.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
 
     const data = {
       nombre,
@@ -704,12 +765,46 @@ function registrarInventario(tipo) {
           document.getElementById("fechaAdquisicion").value;
         data.fechaExpiracion = document.getElementById("fechaExpiracion").value;
         data.proveedor = document.getElementById("proveedor").value;
+
+        if (
+          !nombre ||
+          !variedad ||
+          !cantidad ||
+          !fechaAdquisicion ||
+          !fechaExpiracion ||
+          !proveedor
+        ) {
+          swal({
+            title: "Campos incompletos",
+            text: "Por favor completa todos los campos antes de registrar.",
+            icon: "warning",
+            confirmButtonColor: "#228b22",
+          });
+          return;
+        }
       } else if (tipo === "granos") {
         data.fechaCosecha = document.getElementById("fechaCosecha").value;
         data.ubicacionAlmacenamiento = document.getElementById(
           "ubicacionAlmacenamiento"
         ).value;
         data.calidad = document.getElementById("calidad").value;
+
+        if (
+          !nombre ||
+          !variedad ||
+          !cantidad ||
+          !fechaCosecha ||
+          !ubicacionAlmacenamiento ||
+          !calidad
+        ) {
+          swal({
+            title: "Campos incompletos",
+            text: "Por favor completa todos los campos antes de registrar.",
+            icon: "warning",
+            confirmButtonColor: "#228b22",
+          });
+          return;
+        }
       }
 
       try {
@@ -815,6 +910,16 @@ async function editarCampo(id) {
 
   document.getElementById("guardar-cambios").onclick = async function () {
     let nombre = document.getElementById("nombre").value;
+
+    if (!nombre) {
+      swal({
+        title: "Campos incompletos",
+        text: "Por favor completa el nombre antes de guardar.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
 
     let data = {
       nombre,
@@ -952,6 +1057,16 @@ async function editarParcela(id) {
     let caracteristicas = Array.from(
       document.getElementById("caracteristicas").selectedOptions
     ).map((o) => o.value);
+
+    if (!nombre || !estado || estado === "Seleccionar") {
+      swal({
+        title: "Campos incompletos",
+        text: "Por favor completa todos los campos antes de guardar.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
 
     let data = {
       nombre,
@@ -1278,6 +1393,16 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       coordenada.lng,
     ]);
 
+    if (!nombre) {
+      swal({
+        title: "Campos incompletos",
+        text: "Por favor completa el nombre antes de registrar.",
+        icon: "warning",
+        confirmButtonColor: "#228b22",
+      });
+      return;
+    }
+
     let campoId = null;
     let estado = null;
     let caracteristicas = null;
@@ -1288,6 +1413,40 @@ async function registrarMapa(tipo, capa, elementosDibujados) {
       caracteristicas = Array.from(
         document.getElementById("caracteristicas").selectedOptions
       ).map((o) => o.value);
+      if (
+        !campoId ||
+        !nombre ||
+        !estado ||
+        estado === "Seleccionar" ||
+        caracteristicas.length === 0
+      ) {
+        swal({
+          title: "Campos incompletos",
+          text: "Por favor completa todos los campos antes de registrar la parcela.",
+          icon: "warning",
+          confirmButtonColor: "#228b22",
+        });
+        return;
+      }
+
+      if (estado === "Cultivada") {
+        let semillaSeleccionada = document.getElementById("tipoSemilla").value;
+        let cantidadSeleccionada =
+          document.getElementById("cantidadSembrada").value;
+        if (
+          !semillaSeleccionada ||
+          semillaSeleccionada === "Seleccionar" ||
+          !cantidadSeleccionada
+        ) {
+          swal({
+            title: "Campos incompletos",
+            text: "Por favor selecciona la semilla y cantidad sembrada.",
+            icon: "warning",
+            confirmButtonColor: "#228b22",
+          });
+          return;
+        }
+      }
     }
 
     let data = { nombre, estado, caracteristicas, coordenadas };
@@ -1491,6 +1650,16 @@ async function crearGraficos(tipo) {
   if (Chart.getChart("grafico-comparativo"))
     Chart.getChart("grafico-comparativo").destroy();
 
+  document.getElementById("boton-semillas").onclick = function () {
+    crearGraficos("semillas");
+  };
+  document.getElementById("boton-granos").onclick = function () {
+    crearGraficos("granos");
+  };
+  document.getElementById("boton-campos").onclick = function () {
+    crearGraficos("campos");
+  };
+
   if (tipo === "semillas") {
     const semillas = await fetchWithAuth(`${API_URL}/inventarios/semillas`)
       .then((r) => r.json())
@@ -1501,19 +1670,14 @@ async function crearGraficos(tipo) {
         <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
           No hay datos disponibles para mostrar los reportes de semillas.
         </div>`;
+      document.getElementById("boton-semillas").classList.add("activo");
+      document.getElementById("boton-granos").classList.remove("activo");
+      document.getElementById("boton-campos").classList.remove("activo");
       return;
     }
 
     const { anios, tiposSemillas, datosPorAnio } =
       procesarDatosSemillas(semillas);
-
-    if (!anios.length || !tiposSemillas.length) {
-      graficos.innerHTML = `
-        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
-          No hay datos suficientes para generar los gráficos de semillas.
-        </div>`;
-      return;
-    }
 
     const ctxComparativo = document
       .getElementById("grafico-comparativo")
@@ -1570,18 +1734,13 @@ async function crearGraficos(tipo) {
         <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
           No hay datos disponibles para mostrar los reportes de granos.
         </div>`;
+      document.getElementById("boton-semillas").classList.remove("activo");
+      document.getElementById("boton-granos").classList.add("activo");
+      document.getElementById("boton-campos").classList.remove("activo");
       return;
     }
 
     const { anios, tiposGranos, datosPorAnio } = procesarDatosGranos(granos);
-
-    if (!anios.length || !tiposGranos.length) {
-      graficos.innerHTML = `
-        <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
-          No hay datos suficientes para generar los gráficos de granos.
-        </div>`;
-      return;
-    }
 
     const ctxComparativo = document
       .getElementById("grafico-comparativo")
@@ -1641,6 +1800,9 @@ async function crearGraficos(tipo) {
         <div style="text-align:center; padding:20px; font-size:16px; color:#555;">
           No hay datos disponibles para mostrar los reportes de campos.
         </div>`;
+      document.getElementById("boton-semillas").classList.remove("activo");
+      document.getElementById("boton-granos").classList.remove("activo");
+      document.getElementById("boton-campos").classList.add("activo");
       return;
     }
 
@@ -1677,20 +1839,16 @@ async function crearGraficos(tipo) {
           {
             label: "Superficie (m²)",
             data: superficies,
-            backgroundColor: "rgba(75, 192, 192, 0.3)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
             borderColor: "rgba(75, 192, 192, 1)",
             borderWidth: 1,
           },
         ],
       },
       options: {
-        plugins: {
-          title: {
-            display: true,
-            text: "Comparativa de Superficie de Campos",
-          },
+        scales: {
+          y: { beginAtZero: true },
         },
-        scales: { y: { beginAtZero: true } },
       },
     });
 
@@ -1701,15 +1859,10 @@ async function crearGraficos(tipo) {
       (estado) =>
         parcelas.filter((p) => (p.estado || "Sin estado") === estado).length
     );
-    const pieParcelasDiv = document.createElement("div");
-    pieParcelasDiv.style.width = "270px";
-    pieParcelasDiv.style.height = "270px";
-    pieParcelasDiv.style.margin = "0 auto";
     const pieParcelas = document.createElement("canvas");
-    pieParcelas.width = 270;
-    pieParcelas.height = 270;
-    pieParcelasDiv.appendChild(pieParcelas);
-    graficos.appendChild(pieParcelasDiv);
+    pieParcelas.classList.add("contenedor-graficos");
+    graficos.appendChild(pieParcelas);
+
     new Chart(pieParcelas.getContext("2d"), {
       type: "pie",
       data: {
@@ -1720,19 +1873,23 @@ async function crearGraficos(tipo) {
             backgroundColor: estadosParcelas.map(
               (_, i) => `hsl(${(i * 60) % 360}, 70%, 70%)`
             ),
+            borderColor: "#fff",
+            borderWidth: 2,
           },
         ],
       },
       options: {
         plugins: {
-          legend: { position: "bottom" },
+          legend: { position: "top" },
           title: { display: true, text: "Estados de las parcelas" },
         },
       },
     });
 
     const ctxParcelas = document.createElement("canvas");
-    new Chart(ctxParcelas, {
+    graficos.appendChild(ctxParcelas);
+
+    new Chart(ctxParcelas.getContext("2d"), {
       type: "bar",
       data: {
         labels: nombresCampos,
@@ -1740,80 +1897,23 @@ async function crearGraficos(tipo) {
           {
             label: "Parcelas por campo",
             data: listaCampos.map((c) => cantidadParcelasPorCampo[c.id] || 0),
-            backgroundColor: "rgba(255, 205, 86, 0.7)",
-            borderColor: "rgba(255, 205, 86, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            borderColor: "rgba(75, 192, 192, 1)",
             borderWidth: 1,
           },
         ],
       },
       options: {
-        plugins: {
-          title: {
-            display: true,
-            text: "Parcelas por campo",
-          },
+        scales: {
+          y: { beginAtZero: true },
         },
-        scales: { y: { beginAtZero: true } },
       },
     });
-    graficos.appendChild(ctxParcelas);
 
-    const semillasMap = Object.fromEntries(
-      semillas.map((s) => [s.id, s.nombre])
-    );
-    const nombresParcelas = parcelas.map((p) => p.nombre);
-    const nombresSemillasEnParcela = parcelas.map((p) =>
-      p.semilla ? semillasMap[p.semilla] || "Desconocida" : "Sin semilla"
-    );
-    const ctxSemillaParcela = document.createElement("canvas");
-    ctxSemillaParcela.width = 470;
-    ctxSemillaParcela.height = 200;
-    graficos.appendChild(ctxSemillaParcela);
-    new Chart(ctxSemillaParcela.getContext("2d"), {
-      type: "bar",
-      data: {
-        labels: nombresParcelas,
-        datasets: [
-          {
-            label: "Semilla cultivada",
-            data: nombresParcelas.map((_, i) => 1),
-            backgroundColor: nombresSemillasEnParcela.map(
-              (s, i) => `hsl(${(i * 60) % 360}, 90%, 60%)`
-            ),
-          },
-        ],
-      },
-      options: {
-        indexAxis: "y",
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "Semilla cultivada por parcela" },
-          tooltip: {
-            callbacks: {
-              label: function (ctx) {
-                return "Semilla: " + nombresSemillasEnParcela[ctx.dataIndex];
-              },
-            },
-          },
-        },
-        scales: { x: { display: false } },
-      },
-    });
+    graficos.appendChild(ctxParcelas);
 
     document.getElementById("boton-semillas").classList.remove("activo");
     document.getElementById("boton-granos").classList.remove("activo");
     document.getElementById("boton-campos").classList.add("activo");
   }
-
-  document.getElementById("boton-semillas").onclick = function () {
-    crearGraficos("semillas");
-  };
-
-  document.getElementById("boton-granos").onclick = function () {
-    crearGraficos("granos");
-  };
-
-  document.getElementById("boton-campos").onclick = function () {
-    crearGraficos("campos");
-  };
 }
