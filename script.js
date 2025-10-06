@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080";
+const API_URL = "https://tfg-api-d8m8.onrender.com";
 
 async function fetchWithAuth(url, options = {}) {
   const token = sessionStorage.getItem("jwt");
